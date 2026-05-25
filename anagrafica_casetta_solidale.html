@@ -670,6 +670,7 @@ function apriTurno(turno) {
           '<div class="presence-name">'+p.nome+' <span class="tag tag-codice">'+p.codice+'</span></div>' +
           '<div class="presence-meta">' +
             (p.telefono==='no tel'?'📵 no tel ':'📞 '+p.telefono+' ')+tipoTag(p.noWa) +
+          (turno==='D' && p.indirizzo ? '<br>📍 <a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.indirizzo)+'" target="_blank" style="color:var(--verde);font-weight:500">'+p.indirizzo+'</a>' : (p.indirizzo?'<br>📍 '+p.indirizzo:'')) +
             ((ex.badges||ex.extras)?'<br><span style="font-size:11px">'+ex.badges+ex.extras+'</span>':'') +
           '</div>' +
           (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:2px">⚠️ '+p.esigenze+'</div>':'') +
@@ -702,6 +703,7 @@ function aggiornaPresenza(codice, turno, checkbox) {
 
 function salvaNota(codice, turno) {
   var el = document.getElementById('nota-'+codice);
+  // Leggi solo il NUOVO testo scritto dall'utente
   var nuovoTesto = el.value.trim();
   if (!nuovoTesto) return;
   // Trova la persona nell'anagrafica
@@ -716,12 +718,14 @@ function salvaNota(codice, turno) {
   var mm = oggi.getMonth()+1;
   var aa = oggi.getFullYear();
   var dataTag = '[' + (gg<10?'0'+gg:gg) + '/' + (mm<10?'0'+mm:mm) + '/' + aa + '] ';
-  // Appendi alla nota esistente dell'anagrafica
-  var notaCompleta = p.note ? p.note + ' ' + dataTag + nuovoTesto : dataTag + nuovoTesto;
+  // Salva la nota ORIGINALE prima di aggiornare
+  var notaOriginale = p.note || '';
+  // Aggiungi il nuovo testo alla nota originale
+  var notaCompleta = notaOriginale ? notaOriginale + ' ' + dataTag + nuovoTesto : dataTag + nuovoTesto;
   // Aggiorna in memoria
   p.note = notaCompleta;
-  // Mostra il testo aggiornato nella textarea
-  el.value = notaCompleta;
+  // Svuota il campo input (il testo nuovo è stato aggiunto)
+  el.value = '';
   // Salva su foglio Anagrafica colonna H
   var btn = el.nextElementSibling;
   btn.textContent = '...';
