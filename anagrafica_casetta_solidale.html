@@ -582,22 +582,22 @@ async function salva() {
 
   const row = p.rowNum;
   const updates = [
-    { range: \`Anagrafica!C\${row}\`, values: [[p.attivo]] },
-    { range: \`Anagrafica!D\${row}\`, values: [[p.turno]] },
-    { range: \`Anagrafica!E\${row}\`, values: [[p.orario]] },
-    { range: \`Anagrafica!F\${row}\`, values: [[p.nome]] },
-    { range: \`Anagrafica!G\${row}\`, values: [[p.esigenze]] },
-    { range: \`Anagrafica!H\${row}\`, values: [[p.note]] },
-    { range: \`Anagrafica!I\${row}\`, values: [[p.telefono]] },
-    { range: \`Anagrafica!L\${row}\`, values: [[autocertVal]] },
-    { range: \`Anagrafica!M\${row}\`, values: [[p.totN]] },
-    { range: \`Anagrafica!N\${row}\`, values: [[p.ad]] },
-    { range: \`Anagrafica!O\${row}\`, values: [[p.min]] },
-    { range: \`Anagrafica!P\${row}\`, values: [[p.ol]] },
-    { range: \`Anagrafica!Q\${row}\`, values: [[p.ass]] },
-    { range: \`Anagrafica!R\${row}\`, values: [[p.pan]] },
-    { range: \`Anagrafica!S\${row}\`, values: [[p.banco]] },
-    { range: \`Anagrafica!T\${row}\`, values: [[p.sitBanco]] },
+    { range: 'Anagrafica!C' + row, values: [[p.attivo]] },
+    { range: 'Anagrafica!D' + row, values: [[p.turno]] },
+    { range: 'Anagrafica!E' + row, values: [[p.orario]] },
+    { range: 'Anagrafica!F' + row, values: [[p.nome]] },
+    { range: 'Anagrafica!G' + row, values: [[p.esigenze]] },
+    { range: 'Anagrafica!H' + row, values: [[p.note]] },
+    { range: 'Anagrafica!I' + row, values: [[p.telefono]] },
+    { range: 'Anagrafica!L' + row, values: [[autocertVal]] },
+    { range: 'Anagrafica!M' + row, values: [[p.totN]] },
+    { range: 'Anagrafica!N' + row, values: [[p.ad]] },
+    { range: 'Anagrafica!O' + row, values: [[p.min]] },
+    { range: 'Anagrafica!P' + row, values: [[p.ol]] },
+    { range: 'Anagrafica!Q' + row, values: [[p.ass]] },
+    { range: 'Anagrafica!R' + row, values: [[p.pan]] },
+    { range: 'Anagrafica!S' + row, values: [[p.banco]] },
+    { range: 'Anagrafica!T' + row, values: [[p.sitBanco]] },
   ];
 
   try {
