@@ -366,8 +366,13 @@ async function caricaDati() {
 
 async function fetchSheet(range) {
   const url = `https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}`;
+  console.log('Fetching:', url);
   const r = await fetch(url, { headers: { Authorization: 'Bearer ' + accessToken } });
-  if (!r.ok) throw new Error('Errore lettura foglio: ' + r.status);
+  if (!r.ok) {
+    const errText = await r.text();
+    console.error('Errore risposta:', errText);
+    throw new Error('Errore lettura foglio: ' + r.status + ' — ' + errText.substring(0, 200));
+  }
   return r.json();
 }
 
