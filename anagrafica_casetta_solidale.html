@@ -449,11 +449,11 @@ function cerca(q) {
     if (p.autocert === 'manca') badges += '<span class="badge-danger">⚠️ Autocert manca</span> ';
     var extras = '';
     if (p.totN) extras += '<span>👥 ' + p.totN + '</span> ';
-    if (p.ad) extras += '<span>Ad:' + p.ad + '</span> ';
-    if (p.min) extras += '<span>Min:' + p.min + '</span> ';
-    if (parseInt(p.ol) > 1) extras += '<span style="color:#e67e22">🫒x' + p.ol + '</span> ';
-    if (parseInt(p.ass) > 1) extras += '<span style="color:#e67e22">Assx' + p.ass + '</span> ';
-    if (parseInt(p.pan) > 1) extras += '<span style="color:#e67e22">Panx' + p.pan + '</span> ';
+    if (p.ad) extras += '<span>Adulti: ' + p.ad + '</span> ';
+    if (p.min) extras += '<span>Minori: ' + p.min + '</span> ';
+    if (p.ol) extras += '<span ' + (parseInt(p.ol)>1 ? 'style="color:#e67e22"' : '') + '>🫒 Olio: ' + p.ol + '</span> ';
+    if (p.ass) extras += '<span ' + (parseInt(p.ass)>1 ? 'style="color:#e67e22"' : '') + '>Assorbenti: ' + p.ass + '</span> ';
+    if (p.pan) extras += '<span ' + (parseInt(p.pan)>1 ? 'style="color:#e67e22"' : '') + '>Pannoloni: ' + p.pan + '</span> ';
     return '<div class="person-row">' +
       '<div class="avatar">' + initials(p.nome) + '</div>' +
       '<div class="person-info">' +
