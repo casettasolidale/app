@@ -283,7 +283,7 @@ var LINGUE = [
 ];
 
 var MSGS = {
-  it: { normal: function(n,g,o){ return 'Ciao '+n+', il tuo appuntamento per ritirare il pacco e\' '+g+' alle '+o+'. Ti aspettiamo! Per qualunque cosa scrivici.'; }, dom: function(n,g){ return 'Ciao '+n+', ti informiamo che il tuo pacco verra\' consegnato a domicilio '+g+'. Ti contatteremo per comunicarti l\'orario esatto. Per qualunque cosa scrivici.'; } },
+  it: { normal: function(n,g,o){ return 'Ciao, il tuo appuntamento per ritirare il pacco è '+g+' alle '+o+'. Ti aspettiamo! Se non puoi passare avvisaci :)'; }, dom: function(n,g){ return 'Ciao, ti informiamo che il tuo pacco verrà consegnato a domicilio '+g+'. Ti contatteremo per comunicarti l\'orario esatto. Per qualunque cosa scrivici.'; } },
   en: { normal: function(n,g,o){ return 'Hello '+n+', your appointment to collect your food parcel is on '+g+' at '+o+'. We look forward to seeing you! Feel free to write to us for anything.'; }, dom: function(n,g){ return 'Hello '+n+', we would like to inform you that your food parcel will be delivered to your home on '+g+'. We will contact you to let you know the exact time. Feel free to write to us for anything.'; } },
   fr: { normal: function(n,g,o){ return 'Bonjour '+n+', votre rendez-vous pour recuperer le colis est '+g+' a '+o+'. On vous attend! Pour tout renseignement, ecrivez-nous.'; }, dom: function(n,g){ return 'Bonjour '+n+', nous vous informons que votre colis sera livre a domicile '+g+'. Nous vous contacterons pour vous communiquer l\'heure exacte.'; } },
   de: { normal: function(n,g,o){ return 'Hallo '+n+', Ihr Termin zur Abholung des Pakets ist am '+g+' um '+o+' Uhr. Wir freuen uns auf Sie! Bei Fragen schreiben Sie uns gerne.'; }, dom: function(n,g){ return 'Hallo '+n+', wir mochten Sie informieren, dass Ihr Paket am '+g+' nach Hause geliefert wird. Wir werden Sie kontaktieren, um Ihnen die genaue Uhrzeit mitzuteilen.'; } },
@@ -302,12 +302,20 @@ var MSGS = {
 
 function formatData(serial) {
   if (!serial) return '';
-  if (typeof serial === 'string' && serial.indexOf('/') >= 0) return serial;
+  var giorni = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+  var mesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  // Se è già una stringa con slash (es 15/05/2026) la convertiamo
+  if (typeof serial === 'string' && serial.indexOf('/') >= 0) {
+    var parts = serial.split('/');
+    var d2 = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+    return giorni[d2.getDay()] + ' ' + d2.getDate() + ' ' + mesi[d2.getMonth()];
+  }
   var n = parseFloat(serial);
   if (!isNaN(n) && n > 40000) {
     var d = new Date(Math.round((n - 25569) * 86400 * 1000));
-    return d.toLocaleDateString('it-IT', {weekday:'long', day:'numeric', month:'long'});
+    return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()];
   }
+  // Se è già testo tipo "mercoledì 7 maggio" lasciamolo com'è
   return String(serial);
 }
 
@@ -356,11 +364,19 @@ function caricaDati() {
   Promise.all([
     fetchSheet('Anagrafica!A1:T500'),
     fetchSheet('giorni turni!A1:D30'),
-    fetchSheet('presenze!A1:D2000').catch(function(){ return {values:[]}; })
+    fetchSheet('presenze!A1:E2000').catch(function(){ return {values:[]}; })
   ]).then(function(results) {
     parseAnagrafica(results[0].values || []);
     parseGiorni(results[1].values || []);
-    parsePresenze(results[2].values || []);
+    var presValues = results[2].values || [];
+    if (presValues.length === 0) {
+      // Crea intestazione foglio presenze
+      fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A1:E1?valueInputOption=USER_ENTERED', {
+        method:'PUT', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({values:[['codice','turno','data turno','SI/NO','note']]})
+      });
+    }
+    parsePresenze(presValues);
     costruisciLingue();
     aggiornaTurniButtons();
     mostraTurni();
@@ -404,12 +420,12 @@ function parseGiorni(rows) {
 
 function parsePresenze(rows) {
   presenze = {};
-  // Formato foglio presenze: colonna A=codice, B=turno, C=presente(SI/NO), D=nota
+  // Formato foglio presenze: A=codice, B=turno, C=data turno, D=SI/NO, E=note
   for (var i = 1; i < rows.length; i++) {
     var r = rows[i];
     if (!r || !r[0]) continue;
     var key = String(r[0]).trim() + '|' + String(r[1]||'').trim();
-    presenze[key] = { presente: String(r[2]||'').trim(), nota: String(r[3]||'').trim(), rowNum: i+1 };
+    presenze[key] = { presente: String(r[3]||'').trim(), nota: String(r[4]||'').trim(), rowNum: i+1 };
   }
 }
 
@@ -473,6 +489,7 @@ function cerca(q) {
           (p.telefono?'<span>📞 '+p.telefono+'</span>':'') +
         '</div>' +
         (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:3px">⚠️ '+p.esigenze+'</div>':'') +
+        (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'') +
         ((ex.badges||ex.extras)?'<div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">'+ex.badges+ex.extras+'</div>':'') +
       '</div>' +
       '<button class="btn-edit" onclick="apriModifica('+idx+')">✏️</button>' +
@@ -654,6 +671,7 @@ function apriTurno(turno) {
             ((ex.badges||ex.extras)?'<br><span style="font-size:11px">'+ex.badges+ex.extras+'</span>':'') +
           '</div>' +
           (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:2px">⚠️ '+p.esigenze+'</div>':'') +
+          (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'') +
           '<div class="presence-note">' +
             '<textarea id="nota-'+p.codice+'" placeholder="Aggiungi nota..." rows="1">'+pres.nota+'</textarea>' +
             '<button class="btn-save-note" onclick="salvaNota(\''+p.codice+'\',\''+turno+'\')">Salva nota</button>' +
@@ -680,19 +698,32 @@ function aggiornaPresenza(codice, turno, checkbox) {
 }
 
 function salvaNota(codice, turno) {
-  var nota = document.getElementById('nota-'+codice).value;
+  var el = document.getElementById('nota-'+codice);
+  var nuovoTesto = el.value.trim();
+  if (!nuovoTesto) return;
   var key = codice + '|' + turno;
-  var presente = presenze[key] ? presenze[key].presente : '';
-  salvaPresenzaSheet(codice, turno, presente, nota, key);
+  var pres = presenze[key] || { presente: '', nota: '' };
+  // Data di oggi formattata
+  var oggi = new Date();
+  var gg = oggi.getDate();
+  var mm = oggi.getMonth()+1;
+  var aa = oggi.getFullYear();
+  var dataTag = '[' + (gg<10?'0'+gg:gg) + '/' + (mm<10?'0'+mm:mm) + '/' + aa + '] ';
+  // Appendi alla nota esistente
+  var notaCompleta = pres.nota ? pres.nota + ' ' + dataTag + nuovoTesto : dataTag + nuovoTesto;
+  el.value = notaCompleta;
+  salvaPresenzaSheet(codice, turno, pres.presente, notaCompleta, key);
 }
 
 function salvaPresenzaSheet(codice, turno, presente, nota, key) {
+  var dataTurno = getDataTurno(turno) || '';
   var pres = presenze[key];
   if (pres && pres.rowNum) {
-    // Aggiorna riga esistente
+    // Aggiorna riga esistente: D=SI/NO, E=note
     var updates = [
-      {range:'presenze!C'+pres.rowNum, values:[[presente]]},
-      {range:'presenze!D'+pres.rowNum, values:[[nota]]}
+      {range:'presenze!C'+pres.rowNum, values:[[dataTurno]]},
+      {range:'presenze!D'+pres.rowNum, values:[[presente]]},
+      {range:'presenze!E'+pres.rowNum, values:[[nota]]}
     ];
     fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate', {
       method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
@@ -701,14 +732,13 @@ function salvaPresenzaSheet(codice, turno, presente, nota, key) {
       presenze[key] = {presente:presente, nota:nota, rowNum:pres.rowNum};
     }).catch(function(e){ alert('Errore salvataggio: '+e.message); });
   } else {
-    // Aggiungi nuova riga in fondo
-    fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:D:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS', {
+    // Aggiungi nuova riga: A=codice, B=turno, C=data turno, D=SI/NO, E=note
+    fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:E:append?valueInputOption=USER_ENTERED', {
       method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-      body:JSON.stringify({values:[[codice,turno,presente,nota]]})
+      body:JSON.stringify({values:[[codice, turno, dataTurno, presente, nota]]})
     }).then(function(r){ if(!r.ok) throw new Error('Errore '+r.status); return r.json(); })
-    .then(function(data) {
-      // Aggiorna presenze locali con numero riga
-      fetchSheet('presenze!A1:D2000').then(function(r){
+    .then(function() {
+      fetchSheet('presenze!A1:E2000').then(function(r){
         parsePresenze(r.values||[]);
       });
     }).catch(function(e){ alert('Errore salvataggio: '+e.message); });
