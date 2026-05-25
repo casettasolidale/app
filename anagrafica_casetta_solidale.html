@@ -397,7 +397,7 @@ function parseAnagrafica(rows) {
       rowNum: i+1, codice: String(r[0]||'').padStart(3,'0'),
       attivo: attivoRaw, turno: String(r[3]||'').trim(), orario: String(r[4]||'').trim(),
       nome: String(r[5]||'').trim(), esigenze: String(r[6]||'').trim(), note: String(r[7]||'').trim(),
-      telefono: String(r[8]||'').trim(), noWa: String(r[9]||'').trim().toUpperCase(),
+      telefono: String(r[8]||'').trim() || 'no tel', noWa: String(r[9]||'').trim().toUpperCase(),
       indirizzo: String(r[10]||'').trim(), autocert: autocert, totN: String(r[12]||'').trim(),
       ad: String(r[13]||'').trim(), min: String(r[14]||'').trim(), ol: String(r[15]||'').trim(),
       ass: String(r[16]||'').trim(), pan: String(r[17]||'').trim(), banco: bancoVal, sitBanco: sitBancoVal,
@@ -486,8 +486,9 @@ function cerca(q) {
           '<span class="tag tag-codice">'+p.codice+'</span>' + tipoTag(p.noWa) +
           (p.turno?'<span class="tag tag-turno">'+p.turno+'</span>':'') +
           (p.orario?'<span>'+p.orario+'</span>':'') +
-          (p.telefono?'<span>📞 '+p.telefono+'</span>':'') +
+          '<span>'+(p.telefono==='no tel'?'📵 no tel':'📞 '+p.telefono)+'</span>' +
         '</div>' +
+        (p.indirizzo?'<div style="font-size:12px;color:#888;margin-top:3px">📍 '+p.indirizzo+'</div>':'') +
         (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:3px">⚠️ '+p.esigenze+'</div>':'') +
         (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'') +
         ((ex.badges||ex.extras)?'<div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">'+ex.badges+ex.extras+'</div>':'') +
@@ -606,9 +607,10 @@ function mostraMessaggi() {
   var dom = turnoSelezionato === 'D';
   el.innerHTML = persone.map(function(p) {
     var testo = dom ? msgs.dom(p.nome,data) : msgs.normal(p.nome,data,p.orario);
-    var tel = p.telefono.replace(/\s/g,'').replace(/^00/,'+');
+    var tel = p.telefono === 'no tel' ? '' : p.telefono.replace(/\s/g,'').replace(/^00/,'+');
     var tipo = p.noWa==='SMS'?'sms':(p.noWa==='CHIAMA'||p.noWa==='NO'?'call':'wa');
-    var btnHtml = tipo==='wa' ?
+    var btnHtml = !tel ? '<span style="color:#aaa;font-size:13px">📵 Nessun numero disponibile</span>' :
+      tipo==='wa' ?
       '<a class="btn-wa" href="https://wa.me/'+tel.replace('+','')+'?text='+encodeURIComponent(testo)+'" target="_blank">📱 WhatsApp</a>' :
       tipo==='sms' ? '<a class="btn-sms" href="sms:'+tel+'?body='+encodeURIComponent(testo)+'">💬 SMS</a>' :
       '<a class="btn-tel" href="tel:'+tel+'">📞 Chiama</a>';
@@ -667,13 +669,14 @@ function apriTurno(turno) {
         '<div class="presence-info">' +
           '<div class="presence-name">'+p.nome+' <span class="tag tag-codice">'+p.codice+'</span></div>' +
           '<div class="presence-meta">' +
-            (p.telefono?'📞 '+p.telefono+' ':'')+tipoTag(p.noWa) +
+            (p.telefono==='no tel'?'📵 no tel ':'📞 '+p.telefono+' ')+tipoTag(p.noWa) +
             ((ex.badges||ex.extras)?'<br><span style="font-size:11px">'+ex.badges+ex.extras+'</span>':'') +
           '</div>' +
           (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:2px">⚠️ '+p.esigenze+'</div>':'') +
           (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'') +
-          '<div class="presence-note">' +
-            '<textarea id="nota-'+p.codice+'" placeholder="Aggiungi testo da aggiungere alla nota..." rows="2">'+p.note+'</textarea>' +
+          '<div id="nota-display-'+p.codice+'" style="font-size:12px;color:#666;margin-top:4px;padding:6px 8px;background:#f8f9fa;border-radius:6px;border-left:3px solid #ccc'+(p.note?'':'display:none')+'">📝 '+p.note+'</div>' +
+          '<div class="presence-note" style="margin-top:6px">' +
+            '<textarea id="nota-'+p.codice+'" placeholder="Aggiungi nuova nota..." rows="1"></textarea>' +
             '<button class="btn-save-note" onclick="salvaNota(\''+p.codice+'\',\''+turno+'\')">Salva nota</button>' +
           '</div>' +
         '</div>' +
@@ -723,13 +726,19 @@ function salvaNota(codice, turno) {
   var btn = el.nextElementSibling;
   btn.textContent = '...';
   btn.disabled = true;
-  fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/Anagrafica!H'+p.rowNum+'?valueInputOption=USER_ENTERED', {
+  // Svuota il campo dopo aver composto la nota completa
+  el.value = '';
+  // Aggiorna visivamente il blocco nota esistente
+  var noteDisplay = document.getElementById('nota-display-'+codice);
+  if (noteDisplay) { noteDisplay.textContent = '📝 ' + notaCompleta; noteDisplay.style.display = 'block'; }
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + '/values/' + encodeURIComponent('Anagrafica!H'+p.rowNum) + '?valueInputOption=USER_ENTERED';
+  fetch(url, {
     method:'PUT', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-    body:JSON.stringify({values:[[notaCompleta]]})
+    body:JSON.stringify({range:'Anagrafica!H'+p.rowNum, values:[[notaCompleta]]})
   }).then(function(r){
-    if (!r.ok) throw new Error('Errore '+r.status);
-    btn.textContent = '✓';
-    setTimeout(function(){ btn.textContent = 'Salva nota'; btn.disabled = false; }, 1500);
+    if (!r.ok) return r.text().then(function(t){ throw new Error('Errore '+r.status+': '+t.substring(0,100)); });
+    btn.textContent = '✓ Salvato';
+    setTimeout(function(){ btn.textContent = 'Salva nota'; btn.disabled = false; }, 2000);
   }).catch(function(e){
     alert('Errore salvataggio nota: '+e.message);
     btn.textContent = 'Salva nota'; btn.disabled = false;
