@@ -513,6 +513,7 @@ function cerca(q) {
             ${parseInt(p.ass)>1 ? '<span style="color:#e67e22">Ass x'+p.ass+'</span>' : ''}
             ${parseInt(p.pan)>1 ? '<span style="color:#e67e22">Pan x'+p.pan+'</span>' : ''}
             ${p.autocert === 'manca' ? '<span style="color:#c0392b">⚠️ Autocert manca</span>' : ''}
+            ${(p.banco || '').toLowerCase().includes('registr') || (p.sitBanco || '').toLowerCase().includes('registr') ? '<span style="background:#fff3cd;color:#856404;padding:1px 6px;border-radius:4px;font-weight:600">⚠️ Da registrare</span>' : ''}
           </div>
       </div>
       <button class="btn-edit" onclick="apriModifica(${idx})" title="Modifica">✏️</button>
