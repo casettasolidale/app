@@ -305,46 +305,38 @@ var MSGS = {
 
 function formatData(serial) {
   if (!serial && serial !== 0) return '';
-  var giorniAccento = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+  var giorniAccento = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
+  giorniAccento[1]='lunedì'; giorniAccento[2]='martedì'; giorniAccento[3]='mercoledì';
+  giorniAccento[4]='giovedì'; giorniAccento[5]='venerdì';
   var mesiAbbr = {'gen':0,'feb':1,'mar':2,'apr':3,'mag':4,'giu':5,'lug':6,'ago':7,'set':8,'ott':9,'nov':10,'dic':11};
   var mesiEstesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
   var d = null;
-
   if (typeof serial === 'number' && serial > 40000) {
-    // Numero seriale Excel
     d = new Date(Math.round((serial - 25569) * 86400 * 1000));
   } else if (typeof serial === 'string') {
     var s = serial.trim();
-    // Formato "29 mag" o "03 giu" (da Google Sheets)
-    var m = s.match(/^(\d{1,2})\s+([a-z]{3})$/i);
-    if (m) {
-      var giorno = parseInt(m[1]);
-      var meseIdx = mesiAbbr[m[2].toLowerCase()];
-      if (meseIdx !== undefined) {
-        // Determina l'anno: se il mese è già passato quest'anno, usa l'anno prossimo
-        var oggi = new Date();
-        var anno = oggi.getFullYear();
-        var prova = new Date(anno, meseIdx, giorno);
-        if (prova < oggi) prova = new Date(anno + 1, meseIdx, giorno);
-        d = prova;
+    // Formato "29 mag" o "03 giu" - da Google Sheets
+    var parts = s.split(' ');
+    if (parts.length === 2 && mesiAbbr[parts[1].toLowerCase()] !== undefined) {
+      var giorno = parseInt(parts[0]);
+      var meseIdx = mesiAbbr[parts[1].toLowerCase()];
+      var anno = new Date().getFullYear();
+      d = new Date(anno, meseIdx, giorno);
+      // Se la data e' gia' passata di piu' di 60 giorni, usa anno prossimo
+      if (d < new Date(new Date().getTime() - 60*24*60*60*1000)) {
+        d = new Date(anno + 1, meseIdx, giorno);
       }
     }
     // Formato "29/05/2026"
     else if (s.indexOf('/') >= 0) {
-      var parts = s.split('/');
-      if (parts.length === 3) d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
-    }
-    // Formato "2026-05-29"
-    else if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
-      var parts2 = s.split('-');
-      d = new Date(parseInt(parts2[0]), parseInt(parts2[1])-1, parseInt(parts2[2]));
+      var p2 = s.split('/');
+      if (p2.length === 3) d = new Date(parseInt(p2[2]), parseInt(p2[1])-1, parseInt(p2[0]));
     }
     // Numero seriale come stringa
-    else if (/^\d+$/.test(s) && parseInt(s) > 40000) {
+    else if (parseInt(s) > 40000) {
       d = new Date(Math.round((parseInt(s) - 25569) * 86400 * 1000));
     }
   }
-
   if (d && !isNaN(d.getTime())) {
     return giorniAccento[d.getDay()] + ' ' + d.getDate() + ' ' + mesiEstesi[d.getMonth()];
   }
@@ -479,7 +471,8 @@ function showTab(id, btn) {
 
 function initials(nome) { return nome.split(' ').map(function(w){ return w[0]||''; }).join('').substring(0,2).toUpperCase(); }
 
-function tipoTag(noWa) {
+function tipoTag(noWa, telefono) {
+  if (!telefono || telefono === 'no tel') return '';
   if (noWa==='SMS') return '<span class="tag tag-sms">SMS</span>';
   if (noWa==='CHIAMA'||noWa==='NO') return '<span class="tag tag-chiama">Chiama</span>';
   return '<span class="tag tag-wa">WhatsApp</span>';
@@ -515,7 +508,7 @@ function cerca(q) {
       '<div class="person-info">' +
         '<div class="person-name">'+p.nome+'</div>' +
         '<div class="person-meta">' +
-          '<span class="tag tag-codice">'+p.codice+'</span>' + tipoTag(p.noWa) +
+          '<span class="tag tag-codice">'+p.codice+'</span>' + tipoTag(p.noWa, p.telefono) +
           (p.turno?'<span class="tag tag-turno">'+p.turno+'</span>':'') +
           (p.orario?'<span>'+p.orario+'</span>':'') +
           '<span>'+(p.telefono==='no tel'?'📵 no tel':'📞 '+p.telefono)+'</span>' +
@@ -565,7 +558,7 @@ function salva() {
   var status = document.getElementById('save-status');
   btn.disabled = true; btn.textContent = 'Salvataggio...'; status.textContent = '';
   p.nome = document.getElementById('edit-nome').value;
-  p.telefono = document.getElementById('edit-tel').value;
+  p.telefono = document.getElementById('edit-tel').value.trim() || 'no tel';
   p.noWa = document.getElementById('edit-nowa').value;
   p.attivo = document.getElementById('edit-attivo').value;
   p.autocert = document.getElementById('edit-autocert').value;
@@ -587,7 +580,7 @@ function salva() {
     {range:'Anagrafica!C'+row,values:[[p.attivo]]},{range:'Anagrafica!D'+row,values:[[p.turno]]},
     {range:'Anagrafica!E'+row,values:[[p.orario]]},{range:'Anagrafica!F'+row,values:[[p.nome]]},
     {range:'Anagrafica!G'+row,values:[[p.esigenze]]},{range:'Anagrafica!H'+row,values:[[p.note]]},
-    {range:'Anagrafica!I'+row,values:[[p.telefono]]},{range:'Anagrafica!J'+row,values:[[p.noWa]]},
+    {range:'Anagrafica!I'+row,values:[[p.telefono==='no tel'?'':p.telefono]]},{range:'Anagrafica!J'+row,values:[[p.noWa]]},
     {range:'Anagrafica!L'+row,values:[[autocertVal]]},{range:'Anagrafica!M'+row,values:[[p.totN]]},
     {range:'Anagrafica!N'+row,values:[[p.ad]]},{range:'Anagrafica!O'+row,values:[[p.min]]},
     {range:'Anagrafica!P'+row,values:[[p.ol]]},{range:'Anagrafica!Q'+row,values:[[p.ass]]},
@@ -648,7 +641,7 @@ function mostraMessaggi() {
       '<a class="btn-tel" href="tel:'+tel+'">📞 Chiama</a>';
     return '<div class="msg-card"><div class="msg-header"><div class="avatar">'+initials(p.nome)+'</div>' +
       '<div style="flex:1"><div style="font-weight:600;font-size:14px">'+p.nome+' <span class="tag tag-codice">'+p.codice+'</span></div>' +
-      '<div style="font-size:12px;color:var(--testo-muted)">'+p.telefono+'</div></div>'+tipoTag(p.noWa)+'</div>' +
+      '<div style="font-size:12px;color:var(--testo-muted)">'+p.telefono+'</div></div>'+tipoTag(p.noWa, p.telefono)+'</div>' +
       '<div class="msg-text">'+testo+'</div><div class="msg-actions">'+btnHtml+'</div></div>';
   }).join('');
 }
@@ -702,7 +695,7 @@ function apriTurno(turno) {
         '<div class="presence-info">' +
           '<div class="presence-name">'+p.nome+' <span class="tag tag-codice">'+p.codice+'</span></div>' +
           '<div class="presence-meta">' +
-            (p.telefono==='no tel'?'📵 no tel ':'📞 '+p.telefono+' ')+tipoTag(p.noWa) +
+            (p.telefono==='no tel'?'📵 no tel ':'📞 '+p.telefono+' ')+tipoTag(p.noWa, p.telefono) +
           (function(){ if(!p.indirizzo) return ''; if(turno==='D'){ var addr = p.indirizzo + (p.indirizzo.toLowerCase().indexOf('roma')===-1 ? ', Roma' : ''); var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr); return '<br>📍 <a href="' + mapsUrl + '" target="_blank" style="color:var(--verde);font-weight:600;text-decoration:underline">' + p.indirizzo + '</a>'; } return '<br>📍 ' + p.indirizzo; })() +
             ((ex.badges||ex.extras)?'<br><span style="font-size:11px">'+ex.badges+ex.extras+'</span>':'') +
           '</div>' +
