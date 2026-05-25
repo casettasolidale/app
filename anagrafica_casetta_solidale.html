@@ -172,6 +172,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
         <div class="card">
           <div class="turno-detail-header">
             <button class="btn-back" onclick="tornaATurni()">← Turni</button>
+            <button class="btn-back" id="btn-chiudi-turno" onclick="chiudiTurno()" style="background:#c0392b;color:white;border-color:#c0392b;margin-left:auto">🔒 Chiudi turno</button>
             <div>
               <div id="detail-titolo" style="font-size:16px;font-weight:700"></div>
               <div id="detail-data" style="font-size:13px;color:var(--testo-muted)"></div>
@@ -253,7 +254,7 @@ var SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapi
 
 var tokenClient, accessToken = null;
 var anagrafica = [], giorniTurni = {}, presenze = {};
-var editIdx = -1, turnoSelezionato = '', linguaSelezionata = 'it';
+var editIdx = -1, turnoSelezionato = '', linguaSelezionata = 'it', turnoAperto = '';
 
 var TURNI_NOMI = {
   'MER 1':'Mercoledi 1 turno','GIO 1':'Giovedi 1 turno','VEN 1':'Venerdi 1 turno','SAB 1':'Sabato 1 turno',
@@ -641,6 +642,7 @@ function mostraTurni() {
 }
 
 function apriTurno(turno) {
+  turnoAperto = turno;
   document.getElementById('turni-list-view').style.display = 'none';
   document.getElementById('turno-detail-view').style.display = 'block';
   document.getElementById('detail-titolo').textContent = TURNI_NOMI[turno] || turno;
@@ -670,7 +672,7 @@ function apriTurno(turno) {
           '<div class="presence-name">'+p.nome+' <span class="tag tag-codice">'+p.codice+'</span></div>' +
           '<div class="presence-meta">' +
             (p.telefono==='no tel'?'📵 no tel ':'📞 '+p.telefono+' ')+tipoTag(p.noWa) +
-          (turno==='D' && p.indirizzo ? '<br>📍 <a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(p.indirizzo)+'" target="_blank" style="color:var(--verde);font-weight:500">'+p.indirizzo+'</a>' : (p.indirizzo?'<br>📍 '+p.indirizzo:'')) +
+          (function(){ if(!p.indirizzo) return ''; if(turno==='D'){ var addr = p.indirizzo + (p.indirizzo.toLowerCase().indexOf('roma')===-1 ? ', Roma' : ''); var mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(addr); return '<br>📍 <a href="' + mapsUrl + '" target="_blank" style="color:var(--verde);font-weight:600;text-decoration:underline">' + p.indirizzo + '</a>'; } return '<br>📍 ' + p.indirizzo; })() +
             ((ex.badges||ex.extras)?'<br><span style="font-size:11px">'+ex.badges+ex.extras+'</span>':'') +
           '</div>' +
           (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:2px">⚠️ '+p.esigenze+'</div>':'') +
@@ -687,6 +689,70 @@ function apriTurno(turno) {
   });
 
   document.getElementById('detail-persone').innerHTML = html || '<p class="empty">Nessuna persona in questo turno</p>';
+}
+
+function chiudiTurno() {
+  if (!confirm('Chiudere il turno? Tutti gli utenti senza spunta verranno segnati come NO nel foglio presenze.')) return;
+  var btn = document.getElementById('btn-chiudi-turno');
+  btn.textContent = 'Salvataggio...';
+  btn.disabled = true;
+  // Trova il turno corrente
+  var titoloEl = document.getElementById('detail-titolo');
+  var turnoCorrente = '';
+  // Trova il turno dai bottoni attivi nella tab messaggi oppure dall'apriTurno call
+  // Usiamo la variabile globale turnoAperto
+  turnoCorrente = turnoAperto;
+  var dataTurno = getDataTurno(turnoCorrente) || '';
+  var persone = anagrafica.filter(function(p){ return p.turno === turnoCorrente && isAttivo(p); });
+  var salvataggi = [];
+  persone.forEach(function(p) {
+    var key = p.codice + '|' + turnoCorrente;
+    var pres = presenze[key];
+    // Solo quelli senza spunta (non SI) vengono segnati NO
+    if (!pres || pres.presente !== 'SI') {
+      var nota = pres ? pres.nota : '';
+      salvataggi.push({codice: p.codice, turno: turnoCorrente, dataTurno: dataTurno, presente: 'NO', nota: nota, key: key, rowNum: pres ? pres.rowNum : null});
+    }
+  });
+  if (salvataggi.length === 0) {
+    alert('Tutti gli utenti sono già stati registrati.');
+    btn.textContent = '🔒 Chiudi turno';
+    btn.disabled = false;
+    return;
+  }
+  // Salva tutti i NO in batch
+  var promises = salvataggi.map(function(s) {
+    presenze[s.key] = {presente: 'NO', nota: s.nota, rowNum: s.rowNum};
+    if (s.rowNum) {
+      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate', {
+        method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({valueInputOption:'USER_ENTERED', data:[
+          {range:'presenze!C'+s.rowNum, values:[[s.dataTurno]]},
+          {range:'presenze!D'+s.rowNum, values:[['NO']]},
+          {range:'presenze!E'+s.rowNum, values:[[s.nota]]}
+        ]})
+      });
+    } else {
+      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:E:append?valueInputOption=USER_ENTERED', {
+        method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({values:[[s.codice, s.turno, s.dataTurno, 'NO', s.nota]]})
+      });
+    }
+  });
+  Promise.all(promises).then(function() {
+    // Ricarica presenze e riapri il turno
+    fetchSheet('presenze!A1:E2000').then(function(r){
+      parsePresenze(r.values||[]);
+      apriTurno(turnoCorrente);
+      btn.textContent = '✓ Chiuso';
+      setTimeout(function(){ btn.textContent = '🔒 Chiudi turno'; btn.disabled = false; }, 2000);
+      alert('Turno chiuso! ' + salvataggi.length + ' utenti segnati come NO.');
+    });
+  }).catch(function(e){
+    alert('Errore: '+e.message);
+    btn.textContent = '🔒 Chiudi turno';
+    btn.disabled = false;
+  });
 }
 
 function tornaATurni() {
