@@ -673,7 +673,7 @@ function apriTurno(turno) {
           (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:2px">⚠️ '+p.esigenze+'</div>':'') +
           (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'') +
           '<div class="presence-note">' +
-            '<textarea id="nota-'+p.codice+'" placeholder="Aggiungi nota..." rows="1">'+pres.nota+'</textarea>' +
+            '<textarea id="nota-'+p.codice+'" placeholder="Aggiungi testo da aggiungere alla nota..." rows="2">'+p.note+'</textarea>' +
             '<button class="btn-save-note" onclick="salvaNota(\''+p.codice+'\',\''+turno+'\')">Salva nota</button>' +
           '</div>' +
         '</div>' +
@@ -701,18 +701,39 @@ function salvaNota(codice, turno) {
   var el = document.getElementById('nota-'+codice);
   var nuovoTesto = el.value.trim();
   if (!nuovoTesto) return;
-  var key = codice + '|' + turno;
-  var pres = presenze[key] || { presente: '', nota: '' };
-  // Data di oggi formattata
+  // Trova la persona nell'anagrafica
+  var p = null;
+  for (var i = 0; i < anagrafica.length; i++) {
+    if (anagrafica[i].codice === codice) { p = anagrafica[i]; break; }
+  }
+  if (!p) return;
+  // Data di oggi
   var oggi = new Date();
   var gg = oggi.getDate();
   var mm = oggi.getMonth()+1;
   var aa = oggi.getFullYear();
   var dataTag = '[' + (gg<10?'0'+gg:gg) + '/' + (mm<10?'0'+mm:mm) + '/' + aa + '] ';
-  // Appendi alla nota esistente
-  var notaCompleta = pres.nota ? pres.nota + ' ' + dataTag + nuovoTesto : dataTag + nuovoTesto;
+  // Appendi alla nota esistente dell'anagrafica
+  var notaCompleta = p.note ? p.note + ' ' + dataTag + nuovoTesto : dataTag + nuovoTesto;
+  // Aggiorna in memoria
+  p.note = notaCompleta;
+  // Mostra il testo aggiornato nella textarea
   el.value = notaCompleta;
-  salvaPresenzaSheet(codice, turno, pres.presente, notaCompleta, key);
+  // Salva su foglio Anagrafica colonna H
+  var btn = el.nextElementSibling;
+  btn.textContent = '...';
+  btn.disabled = true;
+  fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/Anagrafica!H'+p.rowNum+'?valueInputOption=USER_ENTERED', {
+    method:'PUT', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+    body:JSON.stringify({values:[[notaCompleta]]})
+  }).then(function(r){
+    if (!r.ok) throw new Error('Errore '+r.status);
+    btn.textContent = '✓';
+    setTimeout(function(){ btn.textContent = 'Salva nota'; btn.disabled = false; }, 1500);
+  }).catch(function(e){
+    alert('Errore salvataggio nota: '+e.message);
+    btn.textContent = 'Salva nota'; btn.disabled = false;
+  });
 }
 
 function salvaPresenzaSheet(codice, turno, presente, nota, key) {
