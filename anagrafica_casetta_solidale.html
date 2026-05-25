@@ -305,33 +305,49 @@ var MSGS = {
 
 function formatData(serial) {
   if (!serial && serial !== 0) return '';
-  var giorni = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
   var giorniAccento = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
-  var mesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  var mesiAbbr = {'gen':0,'feb':1,'mar':2,'apr':3,'mag':4,'giu':5,'lug':6,'ago':7,'set':8,'ott':9,'nov':10,'dic':11};
+  var mesiEstesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
   var d = null;
-  // Numero seriale Excel (es. 45123)
+
   if (typeof serial === 'number' && serial > 40000) {
+    // Numero seriale Excel
     d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+  } else if (typeof serial === 'string') {
+    var s = serial.trim();
+    // Formato "29 mag" o "03 giu" (da Google Sheets)
+    var m = s.match(/^(\d{1,2})\s+([a-z]{3})$/i);
+    if (m) {
+      var giorno = parseInt(m[1]);
+      var meseIdx = mesiAbbr[m[2].toLowerCase()];
+      if (meseIdx !== undefined) {
+        // Determina l'anno: se il mese è già passato quest'anno, usa l'anno prossimo
+        var oggi = new Date();
+        var anno = oggi.getFullYear();
+        var prova = new Date(anno, meseIdx, giorno);
+        if (prova < oggi) prova = new Date(anno + 1, meseIdx, giorno);
+        d = prova;
+      }
+    }
+    // Formato "29/05/2026"
+    else if (s.indexOf('/') >= 0) {
+      var parts = s.split('/');
+      if (parts.length === 3) d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
+    }
+    // Formato "2026-05-29"
+    else if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      var parts2 = s.split('-');
+      d = new Date(parseInt(parts2[0]), parseInt(parts2[1])-1, parseInt(parts2[2]));
+    }
+    // Numero seriale come stringa
+    else if (/^\d+$/.test(s) && parseInt(s) > 40000) {
+      d = new Date(Math.round((parseInt(s) - 25569) * 86400 * 1000));
+    }
   }
-  // Stringa numerica
-  else if (typeof serial === 'string' && /^\d+(\.\d+)?$/.test(serial.trim())) {
-    var n = parseFloat(serial);
-    if (n > 40000) d = new Date(Math.round((n - 25569) * 86400 * 1000));
-  }
-  // Stringa con slash (es 29/05/2026)
-  else if (typeof serial === 'string' && serial.indexOf('/') >= 0) {
-    var parts = serial.split('/');
-    d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
-  }
-  // Stringa con trattino (es 2026-05-29)
-  else if (typeof serial === 'string' && serial.indexOf('-') >= 0 && serial.length === 10) {
-    var parts2 = serial.split('-');
-    d = new Date(parseInt(parts2[0]), parseInt(parts2[1])-1, parseInt(parts2[2]));
-  }
+
   if (d && !isNaN(d.getTime())) {
-    return giorniAccento[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()];
+    return giorniAccento[d.getDay()] + ' ' + d.getDate() + ' ' + mesiEstesi[d.getMonth()];
   }
-  // Già testo, restituisci com'è
   return String(serial);
 }
 
