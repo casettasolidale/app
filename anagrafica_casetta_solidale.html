@@ -395,7 +395,7 @@ function caricaDati() {
   Promise.all([
     fetchSheet('Anagrafica!A1:T500'),
     fetchSheet('giorni turni!A1:D30'),
-    fetchSheet('presenze!A1:E2000').catch(function(){ return {values:[]}; })
+    fetchSheet('presenze!A1:H2000').catch(function(){ return {values:[]}; })
   ]).then(function(results) {
     parseAnagrafica(results[0].values || []);
     parseGiorni(results[1].values || []);
@@ -404,7 +404,7 @@ function caricaDati() {
       // Crea intestazione foglio presenze
       fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A1:E1?valueInputOption=USER_ENTERED', {
         method:'PUT', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-        body:JSON.stringify({values:[['codice','turno','data turno','SI/NO','note']]})
+        body:JSON.stringify({values:[['codice','turno','data turno','SI/NO','note','olio','ass','pan']]})
       });
     }
     parsePresenze(presValues);
@@ -451,12 +451,19 @@ function parseGiorni(rows) {
 
 function parsePresenze(rows) {
   presenze = {};
-  // Formato foglio presenze: A=codice, B=turno, C=data turno, D=SI/NO, E=note
+  // Formato: A=codice, B=turno, C=data turno, D=SI/NO, E=note, F=olio, G=ass, H=pan
   for (var i = 1; i < rows.length; i++) {
     var r = rows[i];
     if (!r || !r[0]) continue;
     var key = String(r[0]).trim() + '|' + String(r[1]||'').trim();
-    presenze[key] = { presente: String(r[3]||'').trim(), nota: String(r[4]||'').trim(), rowNum: i+1 };
+    presenze[key] = {
+      presente: String(r[3]||'').trim(),
+      nota:     String(r[4]||'').trim(),
+      ol:       String(r[5]||'').trim(),
+      ass:      String(r[6]||'').trim(),
+      pan:      String(r[7]||'').trim(),
+      rowNum:   i+1
+    };
   }
 }
 
@@ -709,6 +716,13 @@ function apriTurno(turno) {
           (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:2px">⚠️ '+p.esigenze+'</div>':'') +
           (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'') +
           '<div id="nota-display-'+p.codice+'" style="font-size:12px;color:#666;margin-top:4px;padding:6px 8px;background:#f8f9fa;border-radius:6px;border-left:3px solid #ccc'+(p.note?'':'display:none')+'">📝 '+p.note+'</div>' +
+          (function(){
+            var extras = '';
+            if (p.ol && parseInt(p.ol)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-ol-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'ol\',this.checked)"> Olio <b style="color:'+(parseInt(p.ol)>1?'#e67e22':'#333')+'">'+p.ol+'</b></label>';
+            if (p.ass && parseInt(p.ass)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-ass-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'ass\',this.checked)"> Ass. <b style="color:'+(parseInt(p.ass)>1?'#e67e22':'#333')+'">'+p.ass+'</b></label>';
+            if (p.pan && parseInt(p.pan)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-pan-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'pan\',this.checked)"> Pan. <b style="color:'+(parseInt(p.pan)>1?'#e67e22':'#333')+'">'+p.pan+'</b></label>';
+            return extras ? '<div style="margin-top:5px;padding:4px 0">'+extras+'</div>' : '';
+          })() +
           '<div class="presence-note" style="margin-top:6px">' +
             '<textarea id="nota-'+p.codice+'" placeholder="Aggiungi nuova nota..." rows="1"></textarea>' +
             '<button class="btn-save-note" onclick="salvaNota(\''+p.codice+'\',\''+turno+'\')">Salva nota</button>' +
@@ -740,97 +754,113 @@ function stampaTurno() {
   var totP=persone.length, totN=0, totAd=0, totMin=0;
   persone.forEach(function(p){ totN+=parseInt(p.totN)||0; totAd+=parseInt(p.ad)||0; totMin+=parseInt(p.min)||0; });
 
-  var css = [
-    'body{font-family:Arial,sans-serif;font-size:11px;color:#222;margin:0;background:#fff}',
-    '.page{padding:16px 20px}',
-    '.top-bar{background:#2d6a4f;color:#fff;border-radius:8px;padding:14px 18px;margin-bottom:14px}',
-    '.top-bar h1{margin:0 0 3px;font-size:20px;letter-spacing:0.3px}',
-    '.top-bar p{margin:0;font-size:12px;opacity:0.85}',
-    '.stats{display:flex;gap:0;margin-bottom:16px;border:1.5px solid #d8f3dc;border-radius:8px;overflow:hidden}',
-    '.stat{flex:1;padding:8px 12px;text-align:center;border-right:1px solid #d8f3dc}',
-    '.stat:last-child{border-right:none}',
-    '.stat-n{font-size:22px;font-weight:bold;color:#2d6a4f;display:block}',
-    '.stat-l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.5px}',
-    '.orario-section{margin-bottom:18px;page-break-inside:avoid}',
-    '.orario-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}',
-    '.orario-pill{background:#2d6a4f;color:#fff;border-radius:20px;padding:4px 14px;font-size:13px;font-weight:bold}',
-    '.orario-count{color:#888;font-size:11px}',
-    '.person-card{display:flex;align-items:flex-start;gap:0;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:6px;overflow:hidden;page-break-inside:avoid}',
-    '.check-col{width:36px;min-width:36px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;border-right:1px solid #e0e0e0;font-size:18px;padding:10px 0;align-self:stretch}',
-    '.card-body{flex:1;padding:8px 12px}',
-    '.card-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}',
-    '.codice{background:#f0f0f0;color:#555;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:bold;font-family:monospace}',
-    '.nome{font-size:13px;font-weight:bold}',
-    '.nucleo-row{display:flex;gap:12px;font-size:10px;color:#555;margin-bottom:4px;flex-wrap:wrap}',
-    '.nucleo-item{display:flex;align-items:center;gap:3px}',
-    '.nucleo-label{color:#999}',
-    '.nucleo-val{font-weight:bold;color:#333}',
-    '.nucleo-val.orange{color:#e67e22}',
-    '.extra-row{font-size:10px;line-height:1.6}',
-    '.warn-badge{background:#fff3cd;color:#856404;border-radius:4px;padding:1px 6px;margin-right:4px;font-size:9px;font-weight:bold}',
-    '.danger-badge{background:#ffe0e0;color:#c0392b;border-radius:4px;padding:1px 6px;margin-right:4px;font-size:9px;font-weight:bold}',
-    '.note-text{color:#777;font-size:9px;margin-top:3px;font-style:italic;line-height:1.5}',
-    '.footer{margin-top:20px;padding-top:8px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:9px;color:#aaa}',
-    '@page{size:A4 portrait;margin:1cm}',
-    '@media print{body{margin:0}.page{padding:8px 12px}}'
-  ].join('');
+  // Colore per turno
+  var colori = {'1':'#2d6a4f','2':'#1565c0','3':'#7b1fa2','4':'#e67e22','D':'#c0392b'};
+  var coloriLight = {'1':'#d8f3dc','2':'#e3f0ff','3':'#f3e5f5','4':'#fef3e2','D':'#ffe0e0'};
+  var tNum = turno === 'D' ? 'D' : turno.slice(-1);
+  var col = colori[tNum] || '#2d6a4f';
+  var colL = coloriLight[tNum] || '#d8f3dc';
+
+  var css = 'body{font-family:Arial,sans-serif;font-size:11px;color:#222;margin:0;background:#fff}' +
+    '.page{padding:14px 18px}' +
+    '.istr{background:#fffde7;border:1px solid #e0e0e0;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:9px;line-height:1.6}' +
+    '.top-bar{background:'+col+';color:#fff;border-radius:8px;padding:12px 16px;margin-bottom:10px}' +
+    '.top-bar h1{margin:0 0 2px;font-size:17px}' +
+    '.top-bar p{margin:0;font-size:10px;opacity:0.85}' +
+    '.stats{display:flex;border:1.5px solid '+colL+';border-radius:6px;overflow:hidden;margin-bottom:12px}' +
+    '.stat{flex:1;padding:7px 10px;text-align:center;border-right:1px solid '+colL+'}' +
+    '.stat:last-child{border-right:none}' +
+    '.stat-n{font-size:18px;font-weight:bold;color:'+col+';display:block}' +
+    '.stat-l{font-size:8px;color:#aaa;text-transform:uppercase;letter-spacing:0.4px}' +
+    '.ora-pill{display:inline-block;background:'+col+';color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:bold;margin-bottom:6px}' +
+    '.ora-count{font-size:9px;color:#888;margin-left:8px}' +
+    '.card{display:flex;border:1px solid #e0e0e0;border-radius:7px;margin-bottom:5px;overflow:hidden;page-break-inside:avoid}' +
+    '.card-check{width:32px;min-width:32px;background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:17px;border-right:1px solid #e0e0e0}' +
+    '.card-body{flex:1;padding:7px 10px}' +
+    '.card-right{width:80px;min-width:80px;background:#fafafa;border-left:1px solid #e0e0e0;padding:7px 8px}' +
+    '.nome-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}' +
+    '.codice{background:#f0f0f0;color:#555;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:bold;font-family:monospace}' +
+    '.nome{font-size:12px;font-weight:bold}' +
+    '.badge-warn{background:#fff3cd;color:#856404;border-radius:3px;padding:1px 5px;font-size:8px;font-weight:bold}' +
+    '.badge-danger{background:#ffe0e0;color:#c0392b;border-radius:3px;padding:1px 5px;font-size:8px;font-weight:bold}' +
+    '.nucleo-row{font-size:9px;color:#555;margin-bottom:3px}' +
+    '.esig{font-size:9px;color:#856404;margin-bottom:2px}' +
+    '.nota{font-size:8px;color:#999;font-style:italic;line-height:1.5}' +
+    '.extra-item{font-size:9px;margin-bottom:4px;display:flex;align-items:center;gap:4px}' +
+    '.extra-val{font-weight:bold}' +
+    '.orange{color:#e67e22}' +
+    '.extra-check{display:inline-block;width:12px;height:12px;border:1.5px solid #aaa;border-radius:2px;flex-shrink:0}' +
+    '.footer{margin-top:16px;padding-top:6px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8px;color:#aaa}' +
+    '@page{size:A4 portrait;margin:1cm}' +
+    '@media print{body{margin:0}.page{padding:8px 12px}}';
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titolo+'</title><style>'+css+'</style></head><body><div class="page">';
 
-  // Header
+  // Istruzioni
+  html += '<div class="istr"><b>SEGNARE CON UNA CROCE ACCANTO AL NOME SE L\'UTENTE È PASSATO.</b> ' +
+    'Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti, merendine se ci sono minori. ' +
+    '<b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> (doppi se il nucleo è da 6 o più persone).</div>';
+
+  // Header turno
   html += '<div class="top-bar"><h1>'+titolo+'</h1><p>'+dataTurno+'</p></div>';
 
   // Stats
   html += '<div class="stats">' +
     '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>' +
-    '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Totale nucleo</span></div>' +
+    '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo tot.</span></div>' +
     '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>' +
     '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>' +
     '</div>';
 
   orariSortati.forEach(function(ora){
     var gruppo = orariMap[ora];
-    html += '<div class="orario-section">';
-    html += '<div class="orario-header"><span class="orario-pill">'+ora+'</span><span class="orario-count">'+gruppo.length+' '+( gruppo.length===1?'persona':'persone')+'</span></div>';
+    html += '<div><span class="ora-pill">'+ora+'</span><span class="ora-count">'+gruppo.length+' '+( gruppo.length===1?'persona':'persone')+'</span></div>';
 
     gruppo.forEach(function(p){
       var key = p.codice+'|'+turno;
       var pres = presenze[key] || {};
-      var check = pres.presente==='SI' ? '✅' : '☐';
+      var check = pres.presente==='SI' ? '☑' : '□';
 
-      // Nucleo
-      var nuclItems = [];
-      if (p.totN) nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Nucleo</span> <span class="nucleo-val">'+p.totN+'</span></span>');
-      if (p.ad)   nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Adulti</span> <span class="nucleo-val">'+p.ad+'</span></span>');
-      if (p.min)  nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Minori</span> <span class="nucleo-val">'+p.min+'</span></span>');
-      if (p.ol)   nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Olio</span> <span class="nucleo-val'+(parseInt(p.ol)>1?' orange':'')+'">'+p.ol+'</span></span>');
-      if (p.ass)  nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Ass.</span> <span class="nucleo-val'+(parseInt(p.ass)>1?' orange':'')+'">'+p.ass+'</span></span>');
-      if (p.pan)  nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Pan.</span> <span class="nucleo-val'+(parseInt(p.pan)>1?' orange':'')+'">'+p.pan+'</span></span>');
+      var badges = '';
+      if (p.autocert==='manca') badges += '<span class="badge-danger">📄 Autocert manca</span> ';
+      if (p.daRegistrare) badges += '<span class="badge-warn">📋 Da registrare</span>';
 
-      // Avvisi
-      var avvisi = '';
-      if (p.autocert==='manca') avvisi += '<span class="danger-badge">📄 Autocert manca</span>';
-      if (p.daRegistrare) avvisi += '<span class="warn-badge">📋 Da registrare</span>';
+      var nucItems = [];
+      if (p.totN) nucItems.push('Nucleo: <b>'+p.totN+'</b>');
+      if (p.ad)   nucItems.push('Adulti: <b>'+p.ad+'</b>');
+      if (p.min)  nucItems.push('Minori: <b>'+p.min+'</b>');
 
-      // Esigenze e note
-      var esig = p.esigenze ? '<span style="color:#856404">⚠️ '+p.esigenze+'</span>' : '';
-      var nota = p.note ? '<div class="note-text">📝 '+p.note+'</div>' : '';
+      // Colonna destra: olio/ass/pan con caselline vuote
+      var rightHtml = '';
+      if (p.ol && parseInt(p.ol)>0) {
+        var olColor = parseInt(p.ol)>1 ? ' class="orange"' : '';
+        rightHtml += '<div class="extra-item"><span class="extra-check"></span> Olio <span class="extra-val"'+olColor+'>'+p.ol+'</span></div>';
+      }
+      if (p.ass && parseInt(p.ass)>0) {
+        var assColor = parseInt(p.ass)>1 ? ' class="orange"' : '';
+        rightHtml += '<div class="extra-item"><span class="extra-check"></span> Ass. <span class="extra-val"'+assColor+'>'+p.ass+'</span></div>';
+      }
+      if (p.pan && parseInt(p.pan)>0) {
+        var panColor = parseInt(p.pan)>1 ? ' class="orange"' : '';
+        rightHtml += '<div class="extra-item"><span class="extra-check"></span> Pan. <span class="extra-val"'+panColor+'>'+p.pan+'</span></div>';
+      }
 
-      html += '<div class="person-card">' +
-        '<div class="check-col">'+check+'</div>' +
+      html += '<div class="card">' +
+        '<div class="card-check">'+check+'</div>' +
         '<div class="card-body">' +
-          '<div class="card-top">' +
+          '<div class="nome-row">' +
             '<span class="codice">'+p.codice+'</span>' +
             '<span class="nome">'+p.nome+'</span>' +
-            (avvisi?'<span style="margin-left:auto">'+avvisi+'</span>':'') +
+            (badges ? badges : '') +
           '</div>' +
-          (nuclItems.length?'<div class="nucleo-row">'+nuclItems.join('')+'</div>':'') +
-          ((esig)?'<div class="extra-row">'+esig+'</div>':'') +
-          nota +
+          (nucItems.length ? '<div class="nucleo-row">'+nucItems.join('&nbsp;&nbsp; ')+'</div>' : '') +
+          (p.esigenze ? '<div class="esig">⚠️ <b>Esigenze:</b> '+p.esigenze+'</div>' : '') +
+          (p.note ? '<div class="nota">📝 '+p.note+'</div>' : '') +
         '</div>' +
+        '<div class="card-right">'+rightHtml+'</div>' +
       '</div>';
     });
-    html += '</div>';
+    html += '<div style="height:8px"></div>';
   });
 
   html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
@@ -863,7 +893,7 @@ function chiudiTurno() {
     // Solo quelli senza spunta (non SI) vengono segnati NO
     if (!pres || pres.presente !== 'SI') {
       var nota = pres ? pres.nota : '';
-      salvataggi.push({codice: p.codice, turno: turnoCorrente, dataTurno: dataTurno, presente: 'NO', nota: nota, key: key, rowNum: pres ? pres.rowNum : null});
+      salvataggi.push({codice: p.codice, turno: turnoCorrente, dataTurno: dataTurno, presente: 'NO', nota: nota, ol: pres?pres.ol||'':'', ass: pres?pres.ass||'':'', pan: pres?pres.pan||'':'', key: key, rowNum: pres ? pres.rowNum : null});
     }
   });
   if (salvataggi.length === 0) {
@@ -881,19 +911,22 @@ function chiudiTurno() {
         body:JSON.stringify({valueInputOption:'USER_ENTERED', data:[
           {range:'presenze!C'+s.rowNum, values:[[s.dataTurno]]},
           {range:'presenze!D'+s.rowNum, values:[['NO']]},
-          {range:'presenze!E'+s.rowNum, values:[[s.nota]]}
+          {range:'presenze!E'+s.rowNum, values:[[s.nota]]},
+          {range:'presenze!F'+s.rowNum, values:[[s.ol]]},
+          {range:'presenze!G'+s.rowNum, values:[[s.ass]]},
+          {range:'presenze!H'+s.rowNum, values:[[s.pan]]}
         ]})
       });
     } else {
       return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:E:append?valueInputOption=USER_ENTERED', {
         method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-        body:JSON.stringify({values:[[s.codice, s.turno, s.dataTurno, 'NO', s.nota]]})
+        body:JSON.stringify({values:[[s.codice, s.turno, s.dataTurno, 'NO', s.nota, s.ol, s.ass, s.pan]]})
       });
     }
   });
   Promise.all(promises).then(function() {
     // Ricarica presenze e riapri il turno
-    fetchSheet('presenze!A1:E2000').then(function(r){
+    fetchSheet('presenze!A1:H2000').then(function(r){
       parsePresenze(r.values||[]);
       apriTurno(turnoCorrente);
       btn.textContent = '✓ Chiuso';
@@ -915,8 +948,8 @@ function tornaATurni() {
 function aggiornaPresenza(codice, turno, checkbox) {
   var presente = checkbox.checked ? 'SI' : 'NO';
   var key = codice + '|' + turno;
-  var nota = presenze[key] ? presenze[key].nota : '';
-  salvaPresenzaSheet(codice, turno, presente, nota, key);
+  var pres = presenze[key] || {};
+  salvaPresenzaSheet(codice, turno, presente, pres.nota||'', key, pres.ol||'', pres.ass||'', pres.pan||'');
 }
 
 function salvaNota(codice, turno) {
@@ -967,32 +1000,44 @@ function salvaNota(codice, turno) {
   });
 }
 
-function salvaPresenzaSheet(codice, turno, presente, nota, key) {
+function aggiornaExtra(codice, turno, tipo, checked) {
+  var key = codice + '|' + turno;
+  var pres = presenze[key] || {presente:'', nota:'', ol:'', ass:'', pan:''};
+  if (tipo === 'ol')  pres.ol  = checked ? 'SI' : '';
+  if (tipo === 'ass') pres.ass = checked ? 'SI' : '';
+  if (tipo === 'pan') pres.pan = checked ? 'SI' : '';
+  presenze[key] = pres;
+  salvaPresenzaSheet(codice, turno, pres.presente, pres.nota, key, pres.ol, pres.ass, pres.pan);
+}
+
+function salvaPresenzaSheet(codice, turno, presente, nota, key, olVal, assVal, panVal) {
   var dataTurno = getDataTurno(turno) || '';
   var pres = presenze[key];
+  var ol = olVal !== undefined ? olVal : (pres ? pres.ol||'' : '');
+  var ass = assVal !== undefined ? assVal : (pres ? pres.ass||'' : '');
+  var pan = panVal !== undefined ? panVal : (pres ? pres.pan||'' : '');
   if (pres && pres.rowNum) {
-    // Aggiorna riga esistente: D=SI/NO, E=note
     var updates = [
       {range:'presenze!C'+pres.rowNum, values:[[dataTurno]]},
       {range:'presenze!D'+pres.rowNum, values:[[presente]]},
-      {range:'presenze!E'+pres.rowNum, values:[[nota]]}
+      {range:'presenze!E'+pres.rowNum, values:[[nota]]},
+      {range:'presenze!F'+pres.rowNum, values:[[ol]]},
+      {range:'presenze!G'+pres.rowNum, values:[[ass]]},
+      {range:'presenze!H'+pres.rowNum, values:[[pan]]}
     ];
     fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate', {
       method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
       body:JSON.stringify({valueInputOption:'USER_ENTERED',data:updates})
     }).then(function(r){ if(!r.ok) throw new Error('Errore '+r.status);
-      presenze[key] = {presente:presente, nota:nota, rowNum:pres.rowNum};
+      presenze[key] = {presente:presente, nota:nota, ol:ol, ass:ass, pan:pan, rowNum:pres.rowNum};
     }).catch(function(e){ alert('Errore salvataggio: '+e.message); });
   } else {
-    // Aggiungi nuova riga: A=codice, B=turno, C=data turno, D=SI/NO, E=note
-    fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:E:append?valueInputOption=USER_ENTERED', {
+    fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:H:append?valueInputOption=USER_ENTERED', {
       method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-      body:JSON.stringify({values:[[codice, turno, dataTurno, presente, nota]]})
+      body:JSON.stringify({values:[[codice, turno, dataTurno, presente, nota, ol, ass, pan]]})
     }).then(function(r){ if(!r.ok) throw new Error('Errore '+r.status); return r.json(); })
     .then(function() {
-      fetchSheet('presenze!A1:E2000').then(function(r){
-        parsePresenze(r.values||[]);
-      });
+      fetchSheet('presenze!A1:H2000').then(function(r){ parsePresenze(r.values||[]); });
     }).catch(function(e){ alert('Errore salvataggio: '+e.message); });
   }
 }
