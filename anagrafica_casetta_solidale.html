@@ -93,7 +93,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .turno-data { font-size: 12px; color: var(--testo-muted); }
 .turno-count { font-size: 14px; font-weight: 700; color: var(--verde); background: var(--verde-light); padding: 3px 12px; border-radius: 20px; }
 /* DETTAGLIO TURNO */
-.turno-detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; }
+.turno-detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; justify-content: space-between; }
 .btn-back { background: var(--grigio); border: 1px solid var(--bordo); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
 .presence-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--grigio); }
 .presence-row:last-child { border-bottom: none; }
@@ -171,12 +171,14 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
       <div id="turno-detail-view" style="display:none">
         <div class="card">
           <div class="turno-detail-header">
-            <button class="btn-back" onclick="tornaATurni()">← Turni</button>
-            <button class="btn-back" id="btn-chiudi-turno" onclick="chiudiTurno()" style="background:#c0392b;color:white;border-color:#c0392b;margin-left:auto">🔒 Chiudi turno</button>
-            <div>
-              <div id="detail-titolo" style="font-size:16px;font-weight:700"></div>
-              <div id="detail-data" style="font-size:13px;color:var(--testo-muted)"></div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn-back" onclick="tornaATurni()">← Turni</button>
+              <div>
+                <div id="detail-titolo" style="font-size:16px;font-weight:700"></div>
+                <div id="detail-data" style="font-size:13px;color:var(--testo-muted)"></div>
+              </div>
             </div>
+            <button class="btn-back" id="btn-chiudi-turno" onclick="chiudiTurno()" style="background:#c0392b;color:white;border-color:#c0392b;font-weight:600">🔒 Chiudi turno</button>
           </div>
           <div id="detail-persone"></div>
         </div>
