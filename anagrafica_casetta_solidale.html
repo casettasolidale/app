@@ -230,7 +230,24 @@
       <span class="modal-title" id="modal-title">Modifica utente</span>
       <button class="btn-close" onclick="closeModal()">✕</button>
     </div>
-    <div class="field"><label>Telefono</label><input type="text" id="edit-tel"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Nome e Cognome</label><input type="text" id="edit-nome"></div>
+      <div class="field"><label>Telefono</label><input type="text" id="edit-tel"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Attivo</label>
+        <select id="edit-attivo">
+          <option value="sì">Sì</option>
+          <option value="no">No</option>
+        </select>
+      </div>
+      <div class="field"><label>Autocert</label>
+        <select id="edit-autocert">
+          <option value="sì">Sì</option>
+          <option value="manca">Manca</option>
+        </select>
+      </div>
+    </div>
     <div class="field"><label>Turno</label>
       <select id="edit-turno">
         <option value="">-- nessuno --</option>
@@ -242,6 +259,18 @@
       </select>
     </div>
     <div class="field"><label>Orario</label><input type="text" id="edit-orario" placeholder="es. 10:30"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:8px">
+      <div class="field"><label>Tot. nucleo</label><input type="text" id="edit-totn" style="text-align:center"></div>
+      <div class="field"><label>Adulti</label><input type="text" id="edit-ad" style="text-align:center"></div>
+      <div class="field"><label>Minori</label><input type="text" id="edit-min" style="text-align:center"></div>
+      <div class="field"><label>Olio</label><input type="text" id="edit-ol" style="text-align:center"></div>
+      <div class="field"><label>Assorbenti</label><input type="text" id="edit-ass" style="text-align:center"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="field"><label>Pannoloni</label><input type="text" id="edit-pan"></div>
+      <div class="field"><label>Banco</label><input type="text" id="edit-banco"></div>
+    </div>
+    <div class="field"><label>Situazione banco/autocert</label><textarea id="edit-sitbanco" style="min-height:50px"></textarea></div>
     <div class="field"><label>Esigenze particolari</label><textarea id="edit-esigenze"></textarea></div>
     <div class="field"><label>Note</label><textarea id="edit-note"></textarea></div>
     <button class="btn-save" id="btn-save" onclick="salva()">Salva modifiche</button>
@@ -381,18 +410,32 @@ function parseAnagrafica(rows) {
   for (let i = 1; i < rows.length; i++) {
     const r = rows[i];
     if (!r || !r[0]) continue;
+    // col C (idx 2): attivo - se vuota considera sì
+    const attivoRaw = String(r[2] || '').toLowerCase().trim();
+    // col L (idx 11): autocert - x=sì, vuoto=manca
+    const autocertRaw = String(r[11] || '').toLowerCase().trim();
+    const autocert = (autocertRaw === 'x' || autocertRaw === 'sì' || autocertRaw === 'si') ? 'sì' : (autocertRaw === '' ? 'manca' : autocertRaw);
     anagrafica.push({
-      rowNum: i + 1,
-      codice: String(r[0] || '').padStart(3, '0'),
-      attivo: String(r[2] || '').toLowerCase().trim(),
-      turno:  String(r[3] || '').trim(),
-      orario: String(r[4] || '').trim(),
-      nome:   String(r[5] || '').trim(),
+      rowNum:   i + 1,
+      codice:   String(r[0] || '').padStart(3, '0'),
+      attivo:   attivoRaw === '' ? 'sì' : attivoRaw,
+      turno:    String(r[3] || '').trim(),
+      orario:   String(r[4] || '').trim(),
+      nome:     String(r[5] || '').trim(),
       esigenze: String(r[6] || '').trim(),
-      note:   String(r[7] || '').trim(),
+      note:     String(r[7] || '').trim(),
       telefono: String(r[8] || '').trim(),
-      noWa:   String(r[9] || '').trim().toUpperCase(),
-      indirizzo: String(r[10] || '').trim(),
+      noWa:     String(r[9] || '').trim().toUpperCase(),
+      indirizzo:String(r[10] || '').trim(),
+      autocert: autocert,
+      totN:     String(r[12] || '').trim(),  // col M
+      ad:       String(r[13] || '').trim(),  // col N adulti
+      min:      String(r[14] || '').trim(),  // col O minori
+      ol:       String(r[15] || '').trim(),  // col P olio
+      ass:      String(r[16] || '').trim(),  // col Q assorbenti
+      pan:      String(r[17] || '').trim(),  // col R pannoloni
+      banco:    String(r[18] || '').trim(),  // col S banco
+      sitBanco: String(r[19] || '').trim(),  // col T situazione banco/autocert
     });
   }
 }
@@ -462,6 +505,15 @@ function cerca(q) {
           ${p.telefono ? '<span>📞 ' + p.telefono + '</span>' : ''}
         </div>
         ${p.esigenze ? '<div style="font-size:12px;color:#888;margin-top:4px">⚠️ '+p.esigenze+'</div>' : ''}
+          <div style="font-size:11px;color:#aaa;margin-top:2px;display:flex;gap:6px;flex-wrap:wrap">
+            ${p.totN ? '<span>👥 '+p.totN+'</span>' : ''}
+            ${p.ad ? '<span>Ad:'+p.ad+'</span>' : ''}
+            ${p.min ? '<span>Min:'+p.min+'</span>' : ''}
+            ${parseInt(p.ol)>1 ? '<span style="color:#e67e22">🫒 x'+p.ol+'</span>' : ''}
+            ${parseInt(p.ass)>1 ? '<span style="color:#e67e22">Ass x'+p.ass+'</span>' : ''}
+            ${parseInt(p.pan)>1 ? '<span style="color:#e67e22">Pan x'+p.pan+'</span>' : ''}
+            ${p.autocert === 'manca' ? '<span style="color:#c0392b">⚠️ Autocert manca</span>' : ''}
+          </div>
       </div>
       <button class="btn-edit" onclick="apriModifica(${idx})" title="Modifica">✏️</button>
     </div>`;
@@ -472,13 +524,24 @@ function apriModifica(idx) {
   editIdx = idx;
   const p = anagrafica[idx];
   document.getElementById('modal-title').textContent = p.nome + ' — ' + p.codice;
-  document.getElementById('edit-tel').value     = p.telefono;
-  document.getElementById('edit-turno').value   = p.turno;
-  document.getElementById('edit-orario').value  = p.orario;
+  document.getElementById('edit-nome').value     = p.nome;
+  document.getElementById('edit-tel').value      = p.telefono;
+  document.getElementById('edit-attivo').value   = p.attivo === '' ? 'sì' : p.attivo;
+  document.getElementById('edit-autocert').value = p.autocert;
+  document.getElementById('edit-turno').value    = p.turno;
+  document.getElementById('edit-orario').value   = p.orario;
+  document.getElementById('edit-totn').value     = p.totN;
+  document.getElementById('edit-ad').value       = p.ad;
+  document.getElementById('edit-min').value      = p.min;
+  document.getElementById('edit-ol').value       = p.ol;
+  document.getElementById('edit-ass').value      = p.ass;
+  document.getElementById('edit-pan').value      = p.pan;
+  document.getElementById('edit-banco').value    = p.banco;
+  document.getElementById('edit-sitbanco').value = p.sitBanco;
   document.getElementById('edit-esigenze').value = p.esigenze;
-  document.getElementById('edit-note').value    = p.note;
+  document.getElementById('edit-note').value     = p.note;
   document.getElementById('save-status').textContent = '';
-  document.getElementById('btn-save').disabled  = false;
+  document.getElementById('btn-save').disabled   = false;
   document.getElementById('modal-overlay').classList.add('open');
 }
 
@@ -496,19 +559,44 @@ async function salva() {
   btn.textContent = 'Salvataggio...';
   status.textContent = '';
 
+  p.nome     = document.getElementById('edit-nome').value;
   p.telefono = document.getElementById('edit-tel').value;
+  p.attivo   = document.getElementById('edit-attivo').value;
+  p.autocert = document.getElementById('edit-autocert').value;
   p.turno    = document.getElementById('edit-turno').value;
   p.orario   = document.getElementById('edit-orario').value;
+  p.totN     = document.getElementById('edit-totn').value;
+  p.ad       = document.getElementById('edit-ad').value;
+  p.min      = document.getElementById('edit-min').value;
+  p.ol       = document.getElementById('edit-ol').value;
+  p.ass      = document.getElementById('edit-ass').value;
+  p.pan      = document.getElementById('edit-pan').value;
+  p.banco    = document.getElementById('edit-banco').value;
+  p.sitBanco = document.getElementById('edit-sitbanco').value;
   p.esigenze = document.getElementById('edit-esigenze').value;
   p.note     = document.getElementById('edit-note').value;
 
+  // autocert: salva 'x' per sì, '' per manca
+  const autocertVal = p.autocert === 'sì' ? 'x' : '';
+
   const row = p.rowNum;
   const updates = [
-    { range: `Anagrafica!D${row}`, values: [[p.turno]] },
-    { range: `Anagrafica!E${row}`, values: [[p.orario]] },
-    { range: `Anagrafica!G${row}`, values: [[p.esigenze]] },
-    { range: `Anagrafica!H${row}`, values: [[p.note]] },
-    { range: `Anagrafica!I${row}`, values: [[p.telefono]] },
+    { range: \`Anagrafica!C\${row}\`, values: [[p.attivo]] },
+    { range: \`Anagrafica!D\${row}\`, values: [[p.turno]] },
+    { range: \`Anagrafica!E\${row}\`, values: [[p.orario]] },
+    { range: \`Anagrafica!F\${row}\`, values: [[p.nome]] },
+    { range: \`Anagrafica!G\${row}\`, values: [[p.esigenze]] },
+    { range: \`Anagrafica!H\${row}\`, values: [[p.note]] },
+    { range: \`Anagrafica!I\${row}\`, values: [[p.telefono]] },
+    { range: \`Anagrafica!L\${row}\`, values: [[autocertVal]] },
+    { range: \`Anagrafica!M\${row}\`, values: [[p.totN]] },
+    { range: \`Anagrafica!N\${row}\`, values: [[p.ad]] },
+    { range: \`Anagrafica!O\${row}\`, values: [[p.min]] },
+    { range: \`Anagrafica!P\${row}\`, values: [[p.ol]] },
+    { range: \`Anagrafica!Q\${row}\`, values: [[p.ass]] },
+    { range: \`Anagrafica!R\${row}\`, values: [[p.pan]] },
+    { range: \`Anagrafica!S\${row}\`, values: [[p.banco]] },
+    { range: \`Anagrafica!T\${row}\`, values: [[p.sitBanco]] },
   ];
 
   try {
