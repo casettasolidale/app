@@ -353,7 +353,7 @@ async function caricaDati() {
   try {
     const [ana, giorni] = await Promise.all([
       fetchSheet('Anagrafica!A1:T400'),
-      fetchSheet("'giorni turni'!A1:D25")
+      fetchSheet('giorni turni!A1:D25')
     ]);
     parseAnagrafica(ana.values || []);
     parseGiorni(giorni.values || []);
