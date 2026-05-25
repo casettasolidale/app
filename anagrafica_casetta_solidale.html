@@ -726,131 +726,121 @@ function stampaTurno() {
   var turno = turnoAperto;
   if (!turno) return;
   var dataTurno = getDataTurno(turno) || '';
-  var titolo = (document.getElementById('detail-titolo').textContent) || turno;
-  var persone = anagrafica.filter(function(p){ return p.turno === turno && isAttivo(p); });
+  var titolo = document.getElementById('detail-titolo').textContent || turno;
+  var persone = anagrafica.filter(function(p){ return p.turno===turno && isAttivo(p); });
 
-  // Raggruppa per orario
   var orariMap = {};
-  persone.forEach(function(p) {
-    var ora = p.orario || 'Orario non specificato';
+  persone.forEach(function(p){
+    var ora = p.orario || '--';
     if (!orariMap[ora]) orariMap[ora] = [];
     orariMap[ora].push(p);
   });
   var orariSortati = Object.keys(orariMap).sort();
 
-  // Conta totali
-  var totAd = 0, totMin = 0, totNucleo = 0;
-  persone.forEach(function(p){
-    totAd += parseInt(p.ad)||0;
-    totMin += parseInt(p.min)||0;
-    totNucleo += parseInt(p.totN)||0;
-  });
+  var totP=persone.length, totN=0, totAd=0, totMin=0;
+  persone.forEach(function(p){ totN+=parseInt(p.totN)||0; totAd+=parseInt(p.ad)||0; totMin+=parseInt(p.min)||0; });
 
-  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8">' +
-    '<title>' + titolo + '</title>' +
-    '<style>' +
-    'body { font-family: Arial, sans-serif; font-size: 11px; color: #1a1a1a; margin: 0; padding: 0; }' +
-    '.header { background: #2d6a4f; color: white; padding: 12px 16px; margin-bottom: 12px; }' +
-    '.header h1 { font-size: 18px; margin: 0 0 2px; }' +
-    '.header p { margin: 0; font-size: 12px; opacity: 0.85; }' +
-    '.totali { display: flex; gap: 16px; background: #d8f3dc; padding: 8px 16px; margin-bottom: 12px; font-size: 11px; border-left: 4px solid #2d6a4f; }' +
-    '.totali span { font-weight: bold; }' +
-    '.orario-group { margin-bottom: 14px; page-break-inside: avoid; }' +
-    '.orario-title { background: #2d6a4f; color: white; padding: 4px 10px; font-size: 12px; font-weight: bold; margin-bottom: 0; }' +
-    'table { width: 100%; border-collapse: collapse; font-size: 10px; }' +
-    'th { background: #d8f3dc; color: #2d6a4f; padding: 5px 6px; text-align: left; border: 1px solid #ccc; font-size: 10px; }' +
-    'td { padding: 5px 6px; border: 1px solid #ddd; vertical-align: top; }' +
-    'tr:nth-child(even) td { background: #f9f9f9; }' +
-    '.check-cell { width: 22px; text-align: center; font-size: 16px; }' +
-    '.badge { display: inline-block; padding: 1px 5px; border-radius: 10px; font-size: 9px; font-weight: bold; margin-right: 2px; }' +
-    '.badge-wa { background: #dcf8c6; color: #1a7a2a; }' +
-    '.badge-sms { background: #e3f0ff; color: #1565c0; }' +
-    '.badge-chiama { background: #fef3e2; color: #e67e22; }' +
-    '.warn { color: #856404; font-weight: bold; }' +
-    '.danger { color: #c0392b; font-weight: bold; }' +
-    '.orange { color: #e67e22; font-weight: bold; }' +
-    '.footer { margin-top: 20px; border-top: 1px solid #ccc; padding-top: 8px; font-size: 9px; color: #999; display: flex; justify-content: space-between; }' +
-    '@page { size: A4 landscape; margin: 1cm; }' +
-    '@media print { body { margin: 0; } }' +
-    '</style></head><body>';
+  var css = [
+    'body{font-family:Arial,sans-serif;font-size:11px;color:#222;margin:0;background:#fff}',
+    '.page{padding:16px 20px}',
+    '.top-bar{background:#2d6a4f;color:#fff;border-radius:8px;padding:14px 18px;margin-bottom:14px}',
+    '.top-bar h1{margin:0 0 3px;font-size:20px;letter-spacing:0.3px}',
+    '.top-bar p{margin:0;font-size:12px;opacity:0.85}',
+    '.stats{display:flex;gap:0;margin-bottom:16px;border:1.5px solid #d8f3dc;border-radius:8px;overflow:hidden}',
+    '.stat{flex:1;padding:8px 12px;text-align:center;border-right:1px solid #d8f3dc}',
+    '.stat:last-child{border-right:none}',
+    '.stat-n{font-size:22px;font-weight:bold;color:#2d6a4f;display:block}',
+    '.stat-l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.5px}',
+    '.orario-section{margin-bottom:18px;page-break-inside:avoid}',
+    '.orario-header{display:flex;align-items:center;gap:8px;margin-bottom:8px}',
+    '.orario-pill{background:#2d6a4f;color:#fff;border-radius:20px;padding:4px 14px;font-size:13px;font-weight:bold}',
+    '.orario-count{color:#888;font-size:11px}',
+    '.person-card{display:flex;align-items:flex-start;gap:0;border:1px solid #e0e0e0;border-radius:8px;margin-bottom:6px;overflow:hidden;page-break-inside:avoid}',
+    '.check-col{width:36px;min-width:36px;display:flex;align-items:center;justify-content:center;background:#f8f9fa;border-right:1px solid #e0e0e0;font-size:18px;padding:10px 0;align-self:stretch}',
+    '.card-body{flex:1;padding:8px 12px}',
+    '.card-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}',
+    '.codice{background:#f0f0f0;color:#555;border-radius:4px;padding:1px 6px;font-size:10px;font-weight:bold;font-family:monospace}',
+    '.nome{font-size:13px;font-weight:bold}',
+    '.nucleo-row{display:flex;gap:12px;font-size:10px;color:#555;margin-bottom:4px;flex-wrap:wrap}',
+    '.nucleo-item{display:flex;align-items:center;gap:3px}',
+    '.nucleo-label{color:#999}',
+    '.nucleo-val{font-weight:bold;color:#333}',
+    '.nucleo-val.orange{color:#e67e22}',
+    '.extra-row{font-size:10px;line-height:1.6}',
+    '.warn-badge{background:#fff3cd;color:#856404;border-radius:4px;padding:1px 6px;margin-right:4px;font-size:9px;font-weight:bold}',
+    '.danger-badge{background:#ffe0e0;color:#c0392b;border-radius:4px;padding:1px 6px;margin-right:4px;font-size:9px;font-weight:bold}',
+    '.note-text{color:#777;font-size:9px;margin-top:3px;font-style:italic;line-height:1.5}',
+    '.footer{margin-top:20px;padding-top:8px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:9px;color:#aaa}',
+    '@page{size:A4 portrait;margin:1cm}',
+    '@media print{body{margin:0}.page{padding:8px 12px}}'
+  ].join('');
 
-  html += '<div class="header"><h1>🌿 ' + titolo + '</h1><p>' + dataTurno + '</p></div>';
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titolo+'</title><style>'+css+'</style></head><body><div class="page">';
 
-  html += '<div class="totali">Totale persone: <span>' + persone.length + '</span>' +
-    '&nbsp;&nbsp; Nuclei: <span>' + totNucleo + '</span>' +
-    '&nbsp;&nbsp; Adulti: <span>' + totAd + '</span>' +
-    '&nbsp;&nbsp; Minori: <span>' + totMin + '</span></div>';
+  // Header
+  html += '<div class="top-bar"><h1>'+titolo+'</h1><p>'+dataTurno+'</p></div>';
 
-  orariSortati.forEach(function(ora) {
-    var gruppo = orariMap[ora];
-    html += '<div class="orario-group">';
-    html += '<div class="orario-title">🕐 ' + ora + ' &nbsp;(' + gruppo.length + ' persone)</div>';
-    html += '<table><thead><tr>' +
-      '<th class="check-cell">✓</th>' +
-      '<th style="width:40px">Cod.</th>' +
-      '<th style="width:160px">Nome</th>' +
-      '<th style="width:70px">Telefono</th>' +
-      (turno === 'D' ? '<th style="width:140px">Indirizzo</th>' : '') +
-      '<th style="width:50px">Nucleo</th>' +
-      '<th style="width:30px">Ad.</th>' +
-      '<th style="width:30px">Min.</th>' +
-      '<th style="width:30px">Ol.</th>' +
-      '<th style="width:30px">Ass.</th>' +
-      '<th style="width:30px">Pan.</th>' +
-      '<th>Esigenze particolari</th>' +
-      '<th>Note</th>' +
-      '</tr></thead><tbody>';
-
-    gruppo.forEach(function(p) {
-      var key = p.codice + '|' + turno;
-      var pres = presenze[key] || {};
-      var checkSymbol = pres.presente === 'SI' ? '✅' : '☐';
-      var badgeHtml = '';
-      if (p.telefono !== 'no tel') {
-        if (p.noWa === 'SMS') badgeHtml = '<span class="badge badge-sms">SMS</span>';
-        else if (p.noWa === 'CHIAMA') badgeHtml = '<span class="badge badge-chiama">Tel</span>';
-        else badgeHtml = '<span class="badge badge-wa">WA</span>';
-      }
-      var esigenzeHtml = p.esigenze ? '<span class="warn">⚠️ ' + p.esigenze + '</span>' : '';
-      var noteHtml = p.note || '';
-      if (p.daRegistrare) esigenzeHtml += (esigenzeHtml?' ':'') + '<span class="warn">📋 Da registrare</span>';
-      if (p.autocert === 'manca') esigenzeHtml += (esigenzeHtml?' ':'') + '<span class="danger">📄 Autocert manca</span>';
-      var olHtml = p.ol ? (parseInt(p.ol)>1?'<span class="orange">'+p.ol+'</span>':p.ol) : '';
-      var assHtml = p.ass ? (parseInt(p.ass)>1?'<span class="orange">'+p.ass+'</span>':p.ass) : '';
-      var panHtml = p.pan ? (parseInt(p.pan)>1?'<span class="orange">'+p.pan+'</span>':p.pan) : '';
-
-      html += '<tr>' +
-        '<td class="check-cell">' + checkSymbol + '</td>' +
-        '<td><b>' + p.codice + '</b></td>' +
-        '<td><b>' + p.nome + '</b>' + (badgeHtml?' '+badgeHtml:'') + '<br><span style="color:#888;font-size:9px">' + (p.telefono !== 'no tel' ? p.telefono : '📵') + '</span></td>' +
-        '<td>' + (p.telefono !== 'no tel' ? p.telefono : '📵 no tel') + '</td>' +
-        (turno === 'D' ? '<td>' + (p.indirizzo || '') + '</td>' : '') +
-        '<td style="text-align:center">' + (p.totN||'') + '</td>' +
-        '<td style="text-align:center">' + (p.ad||'') + '</td>' +
-        '<td style="text-align:center">' + (p.min||'') + '</td>' +
-        '<td style="text-align:center">' + olHtml + '</td>' +
-        '<td style="text-align:center">' + assHtml + '</td>' +
-        '<td style="text-align:center">' + panHtml + '</td>' +
-        '<td>' + esigenzeHtml + '</td>' +
-        '<td style="font-size:9px;color:#666">' + noteHtml + '</td>' +
-        '</tr>';
-    });
-    html += '</tbody></table></div>';
-  });
-
-  html += '<div class="footer">' +
-    '<span>Anagrafica Casetta Solidale — ' + titolo + ' — ' + dataTurno + '</span>' +
-    '<span>Stampato il ' + new Date().toLocaleDateString("it-IT") + '</span>' +
+  // Stats
+  html += '<div class="stats">' +
+    '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>' +
+    '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Totale nucleo</span></div>' +
+    '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>' +
+    '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>' +
     '</div>';
 
-  html += '</body></html>';
+  orariSortati.forEach(function(ora){
+    var gruppo = orariMap[ora];
+    html += '<div class="orario-section">';
+    html += '<div class="orario-header"><span class="orario-pill">'+ora+'</span><span class="orario-count">'+gruppo.length+' '+( gruppo.length===1?'persona':'persone')+'</span></div>';
 
-  // Apri in nuova finestra e stampa
+    gruppo.forEach(function(p){
+      var key = p.codice+'|'+turno;
+      var pres = presenze[key] || {};
+      var check = pres.presente==='SI' ? '✅' : '☐';
+
+      // Nucleo
+      var nuclItems = [];
+      if (p.totN) nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Nucleo</span> <span class="nucleo-val">'+p.totN+'</span></span>');
+      if (p.ad)   nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Adulti</span> <span class="nucleo-val">'+p.ad+'</span></span>');
+      if (p.min)  nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Minori</span> <span class="nucleo-val">'+p.min+'</span></span>');
+      if (p.ol)   nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Olio</span> <span class="nucleo-val'+(parseInt(p.ol)>1?' orange':'')+'">'+p.ol+'</span></span>');
+      if (p.ass)  nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Ass.</span> <span class="nucleo-val'+(parseInt(p.ass)>1?' orange':'')+'">'+p.ass+'</span></span>');
+      if (p.pan)  nuclItems.push('<span class="nucleo-item"><span class="nucleo-label">Pan.</span> <span class="nucleo-val'+(parseInt(p.pan)>1?' orange':'')+'">'+p.pan+'</span></span>');
+
+      // Avvisi
+      var avvisi = '';
+      if (p.autocert==='manca') avvisi += '<span class="danger-badge">📄 Autocert manca</span>';
+      if (p.daRegistrare) avvisi += '<span class="warn-badge">📋 Da registrare</span>';
+
+      // Esigenze e note
+      var esig = p.esigenze ? '<span style="color:#856404">⚠️ '+p.esigenze+'</span>' : '';
+      var nota = p.note ? '<div class="note-text">📝 '+p.note+'</div>' : '';
+
+      html += '<div class="person-card">' +
+        '<div class="check-col">'+check+'</div>' +
+        '<div class="card-body">' +
+          '<div class="card-top">' +
+            '<span class="codice">'+p.codice+'</span>' +
+            '<span class="nome">'+p.nome+'</span>' +
+            (avvisi?'<span style="margin-left:auto">'+avvisi+'</span>':'') +
+          '</div>' +
+          (nuclItems.length?'<div class="nucleo-row">'+nuclItems.join('')+'</div>':'') +
+          ((esig)?'<div class="extra-row">'+esig+'</div>':'') +
+          nota +
+        '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  });
+
+  html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
+  html += '</div></body></html>';
+
   var win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
   win.focus();
-  setTimeout(function(){ win.print(); }, 500);
+  setTimeout(function(){ win.print(); }, 600);
 }
 
 function chiudiTurno() {
