@@ -304,21 +304,34 @@ var MSGS = {
 };
 
 function formatData(serial) {
-  if (!serial) return '';
-  var giorni = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
+  if (!serial && serial !== 0) return '';
+  var giorni = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
+  var giorniAccento = ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
   var mesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-  // Se è già una stringa con slash (es 15/05/2026) la convertiamo
-  if (typeof serial === 'string' && serial.indexOf('/') >= 0) {
+  var d = null;
+  // Numero seriale Excel (es. 45123)
+  if (typeof serial === 'number' && serial > 40000) {
+    d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+  }
+  // Stringa numerica
+  else if (typeof serial === 'string' && /^\d+(\.\d+)?$/.test(serial.trim())) {
+    var n = parseFloat(serial);
+    if (n > 40000) d = new Date(Math.round((n - 25569) * 86400 * 1000));
+  }
+  // Stringa con slash (es 29/05/2026)
+  else if (typeof serial === 'string' && serial.indexOf('/') >= 0) {
     var parts = serial.split('/');
-    var d2 = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
-    return giorni[d2.getDay()] + ' ' + d2.getDate() + ' ' + mesi[d2.getMonth()];
+    d = new Date(parseInt(parts[2]), parseInt(parts[1])-1, parseInt(parts[0]));
   }
-  var n = parseFloat(serial);
-  if (!isNaN(n) && n > 40000) {
-    var d = new Date(Math.round((n - 25569) * 86400 * 1000));
-    return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()];
+  // Stringa con trattino (es 2026-05-29)
+  else if (typeof serial === 'string' && serial.indexOf('-') >= 0 && serial.length === 10) {
+    var parts2 = serial.split('-');
+    d = new Date(parseInt(parts2[0]), parseInt(parts2[1])-1, parseInt(parts2[2]));
   }
-  // Se è già testo tipo "mercoledì 7 maggio" lasciamolo com'è
+  if (d && !isNaN(d.getTime())) {
+    return giorniAccento[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()];
+  }
+  // Già testo, restituisci com'è
   return String(serial);
 }
 
