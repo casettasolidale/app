@@ -182,12 +182,13 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
                 <div id="detail-data" style="font-size:13px;color:var(--testo-muted)"></div>
               </div>
             </div>
-            <div style="display:flex;gap:8px">
-              <button class="btn-back" onclick="stampaTurno()" style="background:#1565c0;color:white;border-color:#1565c0;font-weight:600">🖨️ Stampa</button>
-              <button class="btn-back" id="btn-chiudi-turno" onclick="chiudiTurno()" style="background:#c0392b;color:white;border-color:#c0392b;font-weight:600">🔒 Chiudi turno</button>
-            </div>
+            <button class="btn-back" onclick="stampaTurno()" style="background:#1565c0;color:white;border-color:#1565c0;font-weight:600">🖨️ Stampa</button>
           </div>
           <div id="detail-persone"></div>
+          <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--bordo);text-align:right">
+            <button id="btn-chiudi-turno" onclick="chiudiTurno()" style="background:#c0392b;color:white;border:none;border-radius:var(--radius);padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer">🔒 Chiudi turno</button>
+            <p style="font-size:11px;color:var(--testo-muted);margin-top:6px">Tutti gli utenti non spuntati verranno segnati come assenti.</p>
+          </div>
         </div>
       </div>
     </div>
@@ -310,42 +311,72 @@ var MSGS = {
   sw: { normal: function(n,g,o){ return 'Habari '+n+', miadi yako ya kuchukua kifurushi ni '+g+' saa '+o+'. Tunakusubiri! Kwa chochote, tuandikia.'; }, dom: function(n,g){ return 'Habari '+n+', tunakujulisha kwamba kifurushi chako kitawasilishwa nyumbani kwako '+g+'. Tutawasiliana nawe kukuambia wakati halisi.'; } }
 };
 
-function formatData(serial) {
+function formatData(serial, lang) {
   if (!serial && serial !== 0) return '';
-  var giorniAccento = ['domenica','lunedi','martedi','mercoledi','giovedi','venerdi','sabato'];
-  giorniAccento[1]='lunedì'; giorniAccento[2]='martedì'; giorniAccento[3]='mercoledì';
-  giorniAccento[4]='giovedì'; giorniAccento[5]='venerdì';
+  lang = lang || 'it';
+  // Nomi giorni e mesi per lingua
+  var GIORNI = {
+    it: ['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'],
+    en: ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'],
+    fr: ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'],
+    de: ['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'],
+    es: ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'],
+    uk: ['неділя','понеділок','вівторок','середа','четвер','п'ятниця','субота'],
+    ro: ['duminică','luni','marți','miercuri','joi','vineri','sâmbătă'],
+    pt: ['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'],
+    ar: ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'],
+    ur: ['اتوار','پیر','منگل','بدھ','جمعرات','جمعہ','ہفتہ'],
+    hi: ['रविवार','सोमवार','मंगलवार','बुधवार','गुरुवार','शुक्रवार','शनिवार'],
+    bn: ['রবিবার','সোমবার','মঙ্গলবার','বুধবার','বৃহস্পতিবার','শুক্রবার','শনিবার'],
+    tl: ['Linggo','Lunes','Martes','Miyerkules','Huwebes','Biyernes','Sabado'],
+    pl: ['niedziela','poniedziałek','wtorek','środa','czwartek','piątek','sobota'],
+    sw: ['Jumapili','Jumatatu','Jumanne','Jumatano','Alhamisi','Ijumaa','Jumamosi']
+  };
+  var MESI = {
+    it: ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'],
+    en: ['January','February','March','April','May','June','July','August','September','October','November','December'],
+    fr: ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'],
+    de: ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'],
+    es: ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'],
+    uk: ['січня','лютого','березня','квітня','травня','червня','липня','серпня','вересня','жовтня','листопада','грудня'],
+    ro: ['ianuarie','februarie','martie','aprilie','mai','iunie','iulie','august','septembrie','octombrie','noiembrie','decembrie'],
+    pt: ['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'],
+    ar: ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'],
+    ur: ['جنوری','فروری','مارچ','اپریل','مئی','جون','جولائی','اگست','ستمبر','اکتوبر','نومبر','دسمبر'],
+    hi: ['जनवरी','फ़रवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्तूबर','नवंबर','दिसंबर'],
+    bn: ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'],
+    tl: ['Enero','Pebrero','Marso','Abril','Mayo','Hunyo','Hulyo','Agosto','Setyembre','Oktubre','Nobyembre','Disyembre'],
+    pl: ['stycznia','lutego','marca','kwietnia','maja','czerwca','lipca','sierpnia','września','października','listopada','grudnia'],
+    sw: ['Januari','Februari','Machi','Aprili','Mei','Juni','Julai','Agosti','Septemba','Oktoba','Novemba','Desemba']
+  };
+  var giorni = GIORNI[lang] || GIORNI['it'];
+  var mesi = MESI[lang] || MESI['it'];
   var mesiAbbr = {'gen':0,'feb':1,'mar':2,'apr':3,'mag':4,'giu':5,'lug':6,'ago':7,'set':8,'ott':9,'nov':10,'dic':11};
-  var mesiEstesi = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
   var d = null;
   if (typeof serial === 'number' && serial > 40000) {
     d = new Date(Math.round((serial - 25569) * 86400 * 1000));
   } else if (typeof serial === 'string') {
     var s = serial.trim();
-    // Formato "29 mag" o "03 giu" - da Google Sheets
     var parts = s.split(' ');
     if (parts.length === 2 && mesiAbbr[parts[1].toLowerCase()] !== undefined) {
       var giorno = parseInt(parts[0]);
       var meseIdx = mesiAbbr[parts[1].toLowerCase()];
       var anno = new Date().getFullYear();
       d = new Date(anno, meseIdx, giorno);
-      // Se la data e' gia' passata di piu' di 60 giorni, usa anno prossimo
-      if (d < new Date(new Date().getTime() - 60*24*60*60*1000)) {
-        d = new Date(anno + 1, meseIdx, giorno);
-      }
-    }
-    // Formato "29/05/2026"
-    else if (s.indexOf('/') >= 0) {
+      if (d < new Date(new Date().getTime() - 60*24*60*60*1000)) d = new Date(anno+1, meseIdx, giorno);
+    } else if (s.indexOf('/') >= 0) {
       var p2 = s.split('/');
       if (p2.length === 3) d = new Date(parseInt(p2[2]), parseInt(p2[1])-1, parseInt(p2[0]));
-    }
-    // Numero seriale come stringa
-    else if (parseInt(s) > 40000) {
+    } else if (parseInt(s) > 40000) {
       d = new Date(Math.round((parseInt(s) - 25569) * 86400 * 1000));
     }
   }
   if (d && !isNaN(d.getTime())) {
-    return giorniAccento[d.getDay()] + ' ' + d.getDate() + ' ' + mesiEstesi[d.getMonth()];
+    // Formato data per lingua RTL (arabo, urdu)
+    if (lang === 'ar' || lang === 'ur') {
+      return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()];
+    }
+    return giorni[d.getDay()] + ' ' + d.getDate() + ' ' + mesi[d.getMonth()];
   }
   return String(serial);
 }
@@ -445,8 +476,14 @@ function parseGiorni(rows) {
     var giorno = String(r[1]).trim(), sett = r[2] ? String(r[2]).trim() : '', data = r[3] ? String(r[3]).trim() : '';
     if (!data) continue;
     var key = giorno === 'D' ? 'D' : giorno + ' ' + sett;
-    giorniTurni[key] = formatData(data);
+    // Store RAW value so we can format per language in messages
+    giorniTurni[key] = data;
   }
+}
+
+function getDataTurno(turno) {
+  var raw = giorniTurni[turno] || '';
+  return raw ? formatData(raw, 'it') : '';
 }
 
 function parsePresenze(rows) {
@@ -474,7 +511,6 @@ function costruisciLingue() {
   }).join('');
 }
 
-function getDataTurno(turno) { return giorniTurni[turno] || ''; }
 
 function showTab(id, btn) {
   document.querySelectorAll('.section').forEach(function(s){ s.classList.remove('active'); });
@@ -500,9 +536,9 @@ function buildPersonExtras(p) {
   if (p.totN) extras += '<span>👥 Nucleo: '+p.totN+'</span> ';
   if (p.ad) extras += '<span>Adulti: '+p.ad+'</span> ';
   if (p.min) extras += '<span>Minori: '+p.min+'</span> ';
-  if (p.ol) extras += '<span'+(parseInt(p.ol)>1?' style="color:#e67e22"':'')+'>🫒 Olio: '+p.ol+'</span> ';
-  if (p.ass) extras += '<span'+(parseInt(p.ass)>1?' style="color:#e67e22"':'')+'>Assorbenti: '+p.ass+'</span> ';
-  if (p.pan) extras += '<span'+(parseInt(p.pan)>1?' style="color:#e67e22"':'')+'>Pannoloni: '+p.pan+'</span> ';
+  if (p.ol && parseInt(p.ol)>0) extras += '<span'+(parseInt(p.ol)>1?' style="color:#e67e22"':'')+'>🫒 Olio: '+p.ol+'</span> ';
+  if (p.ass && parseInt(p.ass)>0) extras += '<span'+(parseInt(p.ass)>1?' style="color:#e67e22"':'')+'>Assorbenti: '+p.ass+'</span> ';
+  if (p.pan && parseInt(p.pan)>0) extras += '<span'+(parseInt(p.pan)>1?' style="color:#e67e22"':'')+'>Pannoloni: '+p.pan+'</span> ';
   return { badges: badges, extras: extras };
 }
 
@@ -641,7 +677,7 @@ function mostraMessaggi() {
   if (!turnoSelezionato) { el.innerHTML=''; return; }
   var persone = anagrafica.filter(function(p){ return p.turno===turnoSelezionato && isAttivo(p); });
   if (!persone.length) { el.innerHTML='<div class="empty">Nessuna persona in questo turno</div>'; return; }
-  var data = getDataTurno(turnoSelezionato);
+  var data = formatData(giorniTurni[turnoSelezionato] || '', linguaSelezionata);
   var msgs = MSGS[linguaSelezionata] || MSGS['it'];
   var dom = turnoSelezionato === 'D';
   el.innerHTML = persone.map(function(p) {
@@ -719,8 +755,8 @@ function apriTurno(turno) {
           (function(){
             var extras = '';
             if (p.ol && parseInt(p.ol)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-ol-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'ol\',this.checked)"> Olio <b style="color:'+(parseInt(p.ol)>1?'#e67e22':'#333')+'">'+p.ol+'</b></label>';
-            if (p.ass && parseInt(p.ass)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-ass-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'ass\',this.checked)"> Ass. <b style="color:'+(parseInt(p.ass)>1?'#e67e22':'#333')+'">'+p.ass+'</b></label>';
-            if (p.pan && parseInt(p.pan)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-pan-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'pan\',this.checked)"> Pan. <b style="color:'+(parseInt(p.pan)>1?'#e67e22':'#333')+'">'+p.pan+'</b></label>';
+            if (p.ass && parseInt(p.ass)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-ass-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'ass\',this.checked)"> Assorbenti <b style="color:'+(parseInt(p.ass)>1?'#e67e22':'#333')+'">'+p.ass+'</b></label>';
+            if (p.pan && parseInt(p.pan)>0) extras += '<label style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;font-size:11px;cursor:pointer"><input type="checkbox" id="chk-pan-'+p.codice+'" onchange="aggiornaExtra(\''+p.codice+'\',\''+turno+'\',\'pan\',this.checked)"> Pannoloni <b style="color:'+(parseInt(p.pan)>1?'#e67e22':'#333')+'">'+p.pan+'</b></label>';
             return extras ? '<div style="margin-top:5px;padding:4px 0">'+extras+'</div>' : '';
           })() +
           '<div class="presence-note" style="margin-top:6px">' +
@@ -754,250 +790,116 @@ function stampaTurno() {
   var totP=persone.length, totN=0, totAd=0, totMin=0;
   persone.forEach(function(p){ totN+=parseInt(p.totN)||0; totAd+=parseInt(p.ad)||0; totMin+=parseInt(p.min)||0; });
 
-  // Colore per turno
   var colori = {'1':'#2d6a4f','2':'#1565c0','3':'#7b1fa2','4':'#e67e22','D':'#c0392b'};
   var coloriLight = {'1':'#d8f3dc','2':'#e3f0ff','3':'#f3e5f5','4':'#fef3e2','D':'#ffe0e0'};
-  var tNum = turno === 'D' ? 'D' : turno.slice(-1);
-  var col = colori[tNum] || '#2d6a4f';
-  var colL = coloriLight[tNum] || '#d8f3dc';
+  var tNum = turno==='D' ? 'D' : turno.slice(-1);
+  var col = colori[tNum]||'#2d6a4f';
+  var colL = coloriLight[tNum]||'#d8f3dc';
 
-  var css = 'body{font-family:Arial,sans-serif;font-size:11px;color:#222;margin:0;background:#fff}' +
-    '.page{padding:14px 18px}' +
-    '.istr{background:#fffde7;border:1px solid #e0e0e0;border-radius:6px;padding:8px 12px;margin-bottom:10px;font-size:9px;line-height:1.6}' +
-    '.top-bar{background:'+col+';color:#fff;border-radius:8px;padding:12px 16px;margin-bottom:10px}' +
-    '.top-bar h1{margin:0 0 2px;font-size:17px}' +
-    '.top-bar p{margin:0;font-size:10px;opacity:0.85}' +
-    '.stats{display:flex;border:1.5px solid '+colL+';border-radius:6px;overflow:hidden;margin-bottom:12px}' +
-    '.stat{flex:1;padding:7px 10px;text-align:center;border-right:1px solid '+colL+'}' +
-    '.stat:last-child{border-right:none}' +
-    '.stat-n{font-size:18px;font-weight:bold;color:'+col+';display:block}' +
-    '.stat-l{font-size:8px;color:#aaa;text-transform:uppercase;letter-spacing:0.4px}' +
-    '.ora-pill{display:inline-block;background:'+col+';color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:bold;margin-bottom:6px}' +
-    '.ora-count{font-size:9px;color:#888;margin-left:8px}' +
-    '.card{display:flex;border:1px solid #e0e0e0;border-radius:7px;margin-bottom:5px;overflow:hidden;page-break-inside:avoid}' +
-    '.card-check{width:32px;min-width:32px;background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:17px;border-right:1px solid #e0e0e0}' +
-    '.card-body{flex:1;padding:7px 10px}' +
-    '.card-right{width:80px;min-width:80px;background:#fafafa;border-left:1px solid #e0e0e0;padding:7px 8px}' +
-    '.nome-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap}' +
-    '.codice{background:#f0f0f0;color:#555;border-radius:3px;padding:1px 5px;font-size:9px;font-weight:bold;font-family:monospace}' +
-    '.nome{font-size:12px;font-weight:bold}' +
-    '.badge-warn{background:#fff3cd;color:#856404;border-radius:3px;padding:1px 5px;font-size:8px;font-weight:bold}' +
-    '.badge-danger{background:#ffe0e0;color:#c0392b;border-radius:3px;padding:1px 5px;font-size:8px;font-weight:bold}' +
-    '.nucleo-row{font-size:9px;color:#555;margin-bottom:3px}' +
-    '.esig{font-size:9px;color:#856404;margin-bottom:2px}' +
-    '.nota{font-size:8px;color:#999;font-style:italic;line-height:1.5}' +
-    '.extra-item{font-size:9px;margin-bottom:4px;display:flex;align-items:center;gap:4px}' +
-    '.extra-val{font-weight:bold}' +
-    '.orange{color:#e67e22}' +
-    '.extra-check{display:inline-block;width:12px;height:12px;border:1.5px solid #aaa;border-radius:2px;flex-shrink:0}' +
-    '.footer{margin-top:16px;padding-top:6px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8px;color:#aaa}' +
-    '@page{size:A4 portrait;margin:1cm}' +
-    '@media print{body{margin:0}.page{padding:8px 12px}}';
+  var css = [
+    '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");',
+    '*{box-sizing:border-box;margin:0;padding:0}',
+    'body{font-family:"Inter",Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff}',
+    '.page{padding:16px 20px;max-width:800px;margin:0 auto}',
+    '.istr{border-left:4px solid '+col+';background:#fafafa;padding:8px 12px;margin-bottom:14px;font-size:9px;line-height:1.7;color:#444;border-radius:0 6px 6px 0}',
+    '.header{border-radius:10px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}',
+    '.header-main{background:'+col+';padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-end}',
+    '.header-main h1{color:#fff;font-size:18px;font-weight:700;letter-spacing:0.2px}',
+    '.header-main .data{color:rgba(255,255,255,0.8);font-size:11px;font-weight:400}',
+    '.header-stats{background:'+colL+';display:flex}',
+    '.stat{flex:1;padding:8px 12px;text-align:center;border-right:1px solid rgba(0,0,0,0.06)}',
+    '.stat:last-child{border-right:none}',
+    '.stat-n{font-size:20px;font-weight:700;color:'+col+';display:block;line-height:1.2}',
+    '.stat-l{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-top:1px;display:block}',
+    '.ora-row{display:flex;align-items:center;gap:10px;margin:12px 0 6px}',
+    '.ora-pill{background:'+col+';color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:600;letter-spacing:0.3px}',
+    '.ora-line{flex:1;height:1px;background:#e0e0e0}',
+    '.ora-count{font-size:9px;color:#aaa;white-space:nowrap}',
+    '.card{display:grid;grid-template-columns:36px 1fr auto;border:1px solid #eee;border-radius:8px;margin-bottom:5px;overflow:hidden;page-break-inside:avoid;box-shadow:0 1px 3px rgba(0,0,0,0.04)}',
+    '.card-check{background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:18px;border-right:1px solid #eee;color:'+col+';min-height:52px}',
+    '.card-body{padding:7px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px}',
+    '.card-right{padding:7px 10px;display:flex;flex-direction:column;justify-content:center;gap:4px;border-left:1px solid #eee;background:#fafafa;min-width:90px}',
+    '.name-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}',
+    '.codice{font-family:monospace;font-size:9px;color:#999;background:#f0f0f0;padding:1px 5px;border-radius:3px;font-weight:600}',
+    '.nome{font-size:12px;font-weight:700;color:#1a1a1a}',
+    '.badge{font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px}',
+    '.badge-warn{background:#fff3cd;color:#856404}',
+    '.badge-danger{background:#ffe0e0;color:#c0392b}',
+    '.nucleo-row{display:flex;gap:10px;font-size:9px;color:#666;flex-wrap:wrap}',
+    '.nucleo-item{display:flex;gap:3px}',
+    '.nucleo-label{color:#aaa}',
+    '.nucleo-val{font-weight:600;color:#444}',
+    '.nucleo-val.hi{color:#e67e22}',
+    '.esig{font-size:9px;color:#856404;line-height:1.5}',
+    '.nota{font-size:8.5px;color:#aaa;font-style:italic;line-height:1.5}',
+    '.extra-item{display:flex;align-items:center;gap:5px;font-size:9px;color:#555}',
+    '.extra-box{width:13px;height:13px;border:1.5px solid #bbb;border-radius:2px;flex-shrink:0;display:inline-block}',
+    '.extra-val{font-weight:700}',
+    '.extra-val.hi{color:#e67e22}',
+    '.footer{margin-top:18px;padding-top:8px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8px;color:#ccc}',
+    '@page{size:A4 portrait;margin:1cm}',
+    '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:6px 10px}}'
+  ].join('\n');
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titolo+'</title><style>'+css+'</style></head><body><div class="page">';
 
-  // Istruzioni
-  html += '<div class="istr"><b>SEGNARE CON UNA CROCE ACCANTO AL NOME SE L\'UTENTE È PASSATO.</b> ' +
-    'Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti, merendine se ci sono minori. ' +
+  html += '<div class="istr"><b>SEGNARE CON UNA CROCE ACCANTO AL NOME SE L\'UTENTE È PASSATO.</b> '+
+    'Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti, merendine se ci sono minori. '+
     '<b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> (doppi se il nucleo è da 6 o più persone).</div>';
 
-  // Header turno
-  html += '<div class="top-bar"><h1>'+titolo+'</h1><p>'+dataTurno+'</p></div>';
-
-  // Stats
-  html += '<div class="stats">' +
-    '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>' +
-    '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo tot.</span></div>' +
-    '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>' +
-    '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>' +
-    '</div>';
+  html += '<div class="header">'+
+    '<div class="header-main"><h1>'+titolo+'</h1><span class="data">'+dataTurno+'</span></div>'+
+    '<div class="header-stats">'+
+      '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
+      '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo tot.</span></div>'+
+      '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
+      '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>'+
+    '</div></div>';
 
   orariSortati.forEach(function(ora){
     var gruppo = orariMap[ora];
-    html += '<div><span class="ora-pill">'+ora+'</span><span class="ora-count">'+gruppo.length+' '+( gruppo.length===1?'persona':'persone')+'</span></div>';
+    html += '<div class="ora-row"><span class="ora-pill">'+ora+'</span><span class="ora-line"></span><span class="ora-count">'+gruppo.length+' '+(gruppo.length===1?'persona':'persone')+'</span></div>';
 
     gruppo.forEach(function(p){
       var key = p.codice+'|'+turno;
-      var pres = presenze[key] || {};
+      var pres = presenze[key]||{};
       var check = pres.presente==='SI' ? '☑' : '□';
 
       var badges = '';
-      if (p.autocert==='manca') badges += '<span class="badge-danger">📄 Autocert manca</span> ';
-      if (p.daRegistrare) badges += '<span class="badge-warn">📋 Da registrare</span>';
+      if (p.autocert==='manca') badges += '<span class="badge badge-danger">Autocert manca</span> ';
+      if (p.daRegistrare) badges += '<span class="badge badge-warn">Da registrare</span>';
 
-      var nucItems = [];
-      if (p.totN) nucItems.push('Nucleo: <b>'+p.totN+'</b>');
-      if (p.ad)   nucItems.push('Adulti: <b>'+p.ad+'</b>');
-      if (p.min)  nucItems.push('Minori: <b>'+p.min+'</b>');
+      var nucItems = '';
+      if (p.totN) nucItems += '<span class="nucleo-item"><span class="nucleo-label">Nucleo</span><span class="nucleo-val">'+p.totN+'</span></span>';
+      if (p.ad)   nucItems += '<span class="nucleo-item"><span class="nucleo-label">Adulti</span><span class="nucleo-val">'+p.ad+'</span></span>';
+      if (p.min)  nucItems += '<span class="nucleo-item"><span class="nucleo-label">Minori</span><span class="nucleo-val">'+p.min+'</span></span>';
 
-      // Colonna destra: olio/ass/pan con caselline vuote
       var rightHtml = '';
-      if (p.ol && parseInt(p.ol)>0) {
-        var olColor = parseInt(p.ol)>1 ? ' class="orange"' : '';
-        rightHtml += '<div class="extra-item"><span class="extra-check"></span> Olio <span class="extra-val"'+olColor+'>'+p.ol+'</span></div>';
-      }
-      if (p.ass && parseInt(p.ass)>0) {
-        var assColor = parseInt(p.ass)>1 ? ' class="orange"' : '';
-        rightHtml += '<div class="extra-item"><span class="extra-check"></span> Ass. <span class="extra-val"'+assColor+'>'+p.ass+'</span></div>';
-      }
-      if (p.pan && parseInt(p.pan)>0) {
-        var panColor = parseInt(p.pan)>1 ? ' class="orange"' : '';
-        rightHtml += '<div class="extra-item"><span class="extra-check"></span> Pan. <span class="extra-val"'+panColor+'>'+p.pan+'</span></div>';
-      }
+      if (p.ol && parseInt(p.ol)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Olio <span class="extra-val'+(parseInt(p.ol)>1?' hi':'')+'">'+p.ol+'</span></div>';
+      if (p.ass && parseInt(p.ass)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Assorbenti <span class="extra-val'+(parseInt(p.ass)>1?' hi':'')+'">'+p.ass+'</span></div>';
+      if (p.pan && parseInt(p.pan)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Pannoloni <span class="extra-val'+(parseInt(p.pan)>1?' hi':'')+'">'+p.pan+'</span></div>';
 
-      html += '<div class="card">' +
-        '<div class="card-check">'+check+'</div>' +
-        '<div class="card-body">' +
-          '<div class="nome-row">' +
-            '<span class="codice">'+p.codice+'</span>' +
-            '<span class="nome">'+p.nome+'</span>' +
-            (badges ? badges : '') +
-          '</div>' +
-          (nucItems.length ? '<div class="nucleo-row">'+nucItems.join('&nbsp;&nbsp; ')+'</div>' : '') +
-          (p.esigenze ? '<div class="esig">⚠️ <b>Esigenze:</b> '+p.esigenze+'</div>' : '') +
-          (p.note ? '<div class="nota">📝 '+p.note+'</div>' : '') +
-        '</div>' +
-        '<div class="card-right">'+rightHtml+'</div>' +
+      html += '<div class="card">'+
+        '<div class="card-check">'+check+'</div>'+
+        '<div class="card-body">'+
+          '<div class="name-row"><span class="codice">'+p.codice+'</span><span class="nome">'+p.nome+'</span>'+badges+'</div>'+
+          (nucItems?'<div class="nucleo-row">'+nucItems+'</div>':'')+
+          (p.esigenze?'<div class="esig">⚠️ '+p.esigenze+'</div>':'')+
+          (p.note?'<div class="nota">'+p.note+'</div>':'')+
+        '</div>'+
+        '<div class="card-right">'+rightHtml+'</div>'+
       '</div>';
     });
-    html += '<div style="height:8px"></div>';
   });
 
-  html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
+  html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
   html += '</div></body></html>';
 
   var win = window.open('', '_blank');
   win.document.write(html);
   win.document.close();
   win.focus();
-  setTimeout(function(){ win.print(); }, 600);
-}
-
-function chiudiTurno() {
-  if (!confirm('Chiudere il turno? Tutti gli utenti senza spunta verranno segnati come NO nel foglio presenze.')) return;
-  var btn = document.getElementById('btn-chiudi-turno');
-  btn.textContent = 'Salvataggio...';
-  btn.disabled = true;
-  // Trova il turno corrente
-  var titoloEl = document.getElementById('detail-titolo');
-  var turnoCorrente = '';
-  // Trova il turno dai bottoni attivi nella tab messaggi oppure dall'apriTurno call
-  // Usiamo la variabile globale turnoAperto
-  turnoCorrente = turnoAperto;
-  var dataTurno = getDataTurno(turnoCorrente) || '';
-  var persone = anagrafica.filter(function(p){ return p.turno === turnoCorrente && isAttivo(p); });
-  var salvataggi = [];
-  persone.forEach(function(p) {
-    var key = p.codice + '|' + turnoCorrente;
-    var pres = presenze[key];
-    // Solo quelli senza spunta (non SI) vengono segnati NO
-    if (!pres || pres.presente !== 'SI') {
-      var nota = pres ? pres.nota : '';
-      salvataggi.push({codice: p.codice, turno: turnoCorrente, dataTurno: dataTurno, presente: 'NO', nota: nota, ol: pres?pres.ol||'':'', ass: pres?pres.ass||'':'', pan: pres?pres.pan||'':'', key: key, rowNum: pres ? pres.rowNum : null});
-    }
-  });
-  if (salvataggi.length === 0) {
-    alert('Tutti gli utenti sono già stati registrati.');
-    btn.textContent = '🔒 Chiudi turno';
-    btn.disabled = false;
-    return;
-  }
-  // Salva tutti i NO in batch
-  var promises = salvataggi.map(function(s) {
-    presenze[s.key] = {presente: 'NO', nota: s.nota, rowNum: s.rowNum};
-    if (s.rowNum) {
-      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate', {
-        method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-        body:JSON.stringify({valueInputOption:'USER_ENTERED', data:[
-          {range:'presenze!C'+s.rowNum, values:[[s.dataTurno]]},
-          {range:'presenze!D'+s.rowNum, values:[['NO']]},
-          {range:'presenze!E'+s.rowNum, values:[[s.nota]]},
-          {range:'presenze!F'+s.rowNum, values:[[s.ol]]},
-          {range:'presenze!G'+s.rowNum, values:[[s.ass]]},
-          {range:'presenze!H'+s.rowNum, values:[[s.pan]]}
-        ]})
-      });
-    } else {
-      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:E:append?valueInputOption=USER_ENTERED', {
-        method:'POST', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-        body:JSON.stringify({values:[[s.codice, s.turno, s.dataTurno, 'NO', s.nota, s.ol, s.ass, s.pan]]})
-      });
-    }
-  });
-  Promise.all(promises).then(function() {
-    // Ricarica presenze e riapri il turno
-    fetchSheet('presenze!A1:H2000').then(function(r){
-      parsePresenze(r.values||[]);
-      apriTurno(turnoCorrente);
-      btn.textContent = '✓ Chiuso';
-      setTimeout(function(){ btn.textContent = '🔒 Chiudi turno'; btn.disabled = false; }, 2000);
-      alert('Turno chiuso! ' + salvataggi.length + ' utenti segnati come NO.');
-    });
-  }).catch(function(e){
-    alert('Errore: '+e.message);
-    btn.textContent = '🔒 Chiudi turno';
-    btn.disabled = false;
-  });
-}
-
-function tornaATurni() {
-  document.getElementById('turni-list-view').style.display = 'block';
-  document.getElementById('turno-detail-view').style.display = 'none';
-}
-
-function aggiornaPresenza(codice, turno, checkbox) {
-  var presente = checkbox.checked ? 'SI' : 'NO';
-  var key = codice + '|' + turno;
-  var pres = presenze[key] || {};
-  salvaPresenzaSheet(codice, turno, presente, pres.nota||'', key, pres.ol||'', pres.ass||'', pres.pan||'');
-}
-
-function salvaNota(codice, turno) {
-  var el = document.getElementById('nota-'+codice);
-  // Leggi solo il NUOVO testo scritto dall'utente
-  var nuovoTesto = el.value.trim();
-  if (!nuovoTesto) return;
-  // Trova la persona nell'anagrafica
-  var p = null;
-  for (var i = 0; i < anagrafica.length; i++) {
-    if (anagrafica[i].codice === codice) { p = anagrafica[i]; break; }
-  }
-  if (!p) return;
-  // Data di oggi
-  var oggi = new Date();
-  var gg = oggi.getDate();
-  var mm = oggi.getMonth()+1;
-  var aa = oggi.getFullYear();
-  var dataTag = '[' + (gg<10?'0'+gg:gg) + '/' + (mm<10?'0'+mm:mm) + '/' + aa + '] ';
-  // Salva la nota ORIGINALE prima di aggiornare
-  var notaOriginale = p.note || '';
-  // Aggiungi il nuovo testo alla nota originale
-  var notaCompleta = notaOriginale ? notaOriginale + ' ' + dataTag + nuovoTesto : dataTag + nuovoTesto;
-  // Aggiorna in memoria
-  p.note = notaCompleta;
-  // Svuota il campo input (il testo nuovo è stato aggiunto)
-  el.value = '';
-  // Salva su foglio Anagrafica colonna H
-  var btn = el.nextElementSibling;
-  btn.textContent = '...';
-  btn.disabled = true;
-  // Svuota il campo dopo aver composto la nota completa
-  el.value = '';
-  // Aggiorna visivamente il blocco nota esistente
-  var noteDisplay = document.getElementById('nota-display-'+codice);
-  if (noteDisplay) { noteDisplay.textContent = '📝 ' + notaCompleta; noteDisplay.style.display = 'block'; }
-  var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + '/values/' + encodeURIComponent('Anagrafica!H'+p.rowNum) + '?valueInputOption=USER_ENTERED';
-  fetch(url, {
-    method:'PUT', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
-    body:JSON.stringify({range:'Anagrafica!H'+p.rowNum, values:[[notaCompleta]]})
-  }).then(function(r){
-    if (!r.ok) return r.text().then(function(t){ throw new Error('Errore '+r.status+': '+t.substring(0,100)); });
-    btn.textContent = '✓ Salvato';
-    setTimeout(function(){ btn.textContent = 'Salva nota'; btn.disabled = false; }, 2000);
-  }).catch(function(e){
-    alert('Errore salvataggio nota: '+e.message);
-    btn.textContent = 'Salva nota'; btn.disabled = false;
-  });
+  setTimeout(function(){ win.print(); }, 700);
 }
 
 function aggiornaExtra(codice, turno, tipo, checked) {
