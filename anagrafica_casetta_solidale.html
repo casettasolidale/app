@@ -146,9 +146,12 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
     </nav>
 
     <div id="tab-cerca" class="section active">
-      <div class="search-wrap">
-        <span class="search-icon">🔍</span>
-        <input type="search" id="search-input" placeholder="Cerca per codice (es. 001) o nome..." oninput="cerca(this.value)" autocomplete="off">
+      <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center">
+        <div class="search-wrap" style="flex:1;margin-bottom:0">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="search-input" placeholder="Cerca per codice (es. 001) o nome..." oninput="cerca(this.value)" autocomplete="off">
+        </div>
+        <button onclick="apriNuovoUtente()" style="background:var(--verde);color:white;border:none;border-radius:var(--radius);padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Nuovo utente</button>
       </div>
       <div class="card" id="search-card" style="display:none">
         <div id="search-results"></div>
@@ -170,6 +173,16 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
         <div class="card">
           <div class="card-title">Turni del mese — clicca per aprire</div>
           <div id="turni-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Stampa tutti i turni di un numero</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="stampaTuttiTurni('1')" style="background:var(--verde);color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 1</button>
+            <button onclick="stampaTuttiTurni('2')" style="background:#1565c0;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 2</button>
+            <button onclick="stampaTuttiTurni('3')" style="background:#7b1fa2;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 3</button>
+            <button onclick="stampaTuttiTurni('4')" style="background:#e67e22;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 4</button>
+            <button onclick="stampaTuttiTurni('D')" style="background:#c0392b;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Domicilio</button>
+          </div>
         </div>
       </div>
       <div id="turno-detail-view" style="display:none">
@@ -542,6 +555,55 @@ function buildPersonExtras(p) {
   return { badges: badges, extras: extras };
 }
 
+function apriNuovoUtente() {
+  // Trova il primo codice con riga vuota nell'anagrafica (nome vuoto)
+  var nuovoCodice = '';
+  for (var i = 0; i < anagrafica.length; i++) {
+    if (!anagrafica[i].nome || anagrafica[i].nome.trim() === '') {
+      nuovoCodice = anagrafica[i].codice;
+      editIdx = i;
+      break;
+    }
+  }
+  if (!nuovoCodice) {
+    // Nessuna riga vuota - crea nuovo con codice progressivo
+    var maxCod = 0;
+    anagrafica.forEach(function(p){ var n=parseInt(p.codice)||0; if(n>maxCod) maxCod=n; });
+    nuovoCodice = String(maxCod+1).padStart(3,'0');
+    // Aggiungi riga vuota in anagrafica locale
+    anagrafica.push({
+      rowNum: anagrafica.length + 2,
+      codice: nuovoCodice, attivo:'sì', turno:'', orario:'', nome:'',
+      esigenze:'', note:'', telefono:'no tel', noWa:'', indirizzo:'',
+      autocert:'manca', totN:'', ad:'', min:'', ol:'', ass:'', pan:'',
+      banco:'', sitBanco:'', daRegistrare:false
+    });
+    editIdx = anagrafica.length - 1;
+  }
+  var p = anagrafica[editIdx];
+  document.getElementById('modal-title').textContent = '➕ Nuovo utente — codice ' + nuovoCodice;
+  document.getElementById('edit-nome').value = '';
+  document.getElementById('edit-tel').value = '';
+  document.getElementById('edit-nowa').value = '';
+  document.getElementById('edit-attivo').value = 'sì';
+  document.getElementById('edit-autocert').value = 'manca';
+  document.getElementById('edit-turno').value = '';
+  document.getElementById('edit-orario').value = '';
+  document.getElementById('edit-totn').value = '';
+  document.getElementById('edit-ad').value = '';
+  document.getElementById('edit-min').value = '';
+  document.getElementById('edit-ol').value = '';
+  document.getElementById('edit-ass').value = '';
+  document.getElementById('edit-pan').value = '';
+  document.getElementById('edit-banco').value = '';
+  document.getElementById('edit-sitbanco').value = '';
+  document.getElementById('edit-esigenze').value = '';
+  document.getElementById('edit-note').value = '';
+  document.getElementById('save-status').textContent = '';
+  document.getElementById('btn-save').disabled = false;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
 function cerca(q) {
   var card = document.getElementById('search-card');
   var el = document.getElementById('search-results');
@@ -775,12 +837,56 @@ function apriTurno(turno) {
   document.getElementById('detail-persone').innerHTML = html || '<p class="empty">Nessuna persona in questo turno</p>';
 }
 
+function stampaTuttiTurni(numero) {
+  // Raccoglie tutti i turni del numero dato (es. '1' -> MER 1, GIO 1, VEN 1, SAB 1)
+  // oppure 'D' per il domicilio
+  var turniDaStampare = [];
+  if (numero === 'D') {
+    turniDaStampare = ['D'];
+  } else {
+    ['MER','GIO','VEN','SAB'].forEach(function(g){
+      var t = g + ' ' + numero;
+      // Verifica che ci siano persone attive in quel turno
+      var n = anagrafica.filter(function(p){ return p.turno===t && isAttivo(p); }).length;
+      if (n > 0) turniDaStampare.push(t);
+    });
+  }
+  if (!turniDaStampare.length) {
+    alert('Nessun turno trovato per il turno ' + numero);
+    return;
+  }
+  // Genera HTML per tutti i turni e apri in un'unica finestra
+  var allHtml = '';
+  turniDaStampare.forEach(function(turno, idx) {
+    allHtml += generaHtmlTurno(turno);
+    // Salto pagina tra turni (tranne l'ultimo)
+    if (idx < turniDaStampare.length - 1) {
+      allHtml += '<div style="page-break-after:always"></div>';
+    }
+  });
+  var win = window.open('', '_blank');
+  win.document.write(allHtml);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); }, 800);
+}
+
 function stampaTurno() {
   var turno = turnoAperto;
   if (!turno) return;
+  var html = generaHtmlTurno(turno);
+  var win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(function(){ win.print(); }, 700);
+}
+
+function generaHtmlTurno(turno) {
   var dataTurno = getDataTurno(turno) || '';
-  var titolo = document.getElementById('detail-titolo').textContent || turno;
+  var titolo = TURNI_NOMI[turno] || turno;
   var persone = anagrafica.filter(function(p){ return p.turno===turno && isAttivo(p); });
+  if (!persone.length) return '';
 
   var orariMap = {};
   persone.forEach(function(p){
@@ -796,7 +902,6 @@ function stampaTurno() {
   var coloriLight={'1':'#d8f3dc','2':'#deeeff','3':'#f0e5ff','4':'#fef3e2','D':'#ffe5e5'};
   var tNum=turno==='D'?'D':turno.slice(-1);
   var col=colori[tNum]||'#2d6a4f', colL=coloriLight[tNum]||'#d8f3dc';
-
   var css = [
     '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");',
     '*{box-sizing:border-box;margin:0;padding:0}',
@@ -869,8 +974,7 @@ function stampaTurno() {
         : '<span class="check">□</span>';
 
       var badges='';
-      if(p.autocert==='manca') badges+='<span class="badge-danger">Autocert manca</span> ';
-      if(p.daRegistrare) badges+='<span class="badge-warn">Da registrare</span>';
+      if(p.autocert==='manca') badges+='<br><span class="badge-danger">Autocert manca</span>';
 
       var extraHtml='';
       if(p.ol&&parseInt(p.ol)>0)  extraHtml+='<div><span class="box"></span>Olio <b class="'+(parseInt(p.ol)>1?'hi':'')+'">'+p.ol+'</b></div>';
@@ -887,7 +991,7 @@ function stampaTurno() {
         '<td class="center" style="font-size:9.5px;font-weight:600;color:#555">'+ora+'</td>'+
         '<td><span class="codice">'+p.codice+'</span></td>'+
         '<td><span class="nome">'+p.nome+'</span>'+(badges?' '+badges:'')+'</td>'+
-        '<td style="font-size:8px;color:#555;line-height:1.4">'+bancoInfo+'</td>'+
+        '<td style="font-size:8px;color:#555;line-height:1.4">'+(p.daRegistrare?'<span class="badge-warn">Da registrare</span><br>':'')+bancoInfo+'</td>'+
         '<td class="center">'+(p.totN||'')+'</td>'+
         '<td class="center">'+(p.ad||'')+'</td>'+
         '<td class="center">'+(p.min||'')+'</td>'+
@@ -900,14 +1004,8 @@ function stampaTurno() {
   html += '</tbody></table>';
   html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
   html += '</div></body></html>';
-
-  var win=window.open('','_blank');
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-  setTimeout(function(){win.print();},700);
+  return html;
 }
-
 function tornaATurni() {
   document.getElementById('turni-list-view').style.display = 'block';
   document.getElementById('turno-detail-view').style.display = 'none';
