@@ -791,87 +791,100 @@ function stampaTurno() {
   persone.forEach(function(p){ totN+=parseInt(p.totN)||0; totAd+=parseInt(p.ad)||0; totMin+=parseInt(p.min)||0; });
 
   var colori = {'1':'#2d6a4f','2':'#1565c0','3':'#7b1fa2','4':'#e67e22','D':'#c0392b'};
-  var coloriLight = {'1':'#d8f3dc','2':'#e3f0ff','3':'#f3e5f5','4':'#fef3e2','D':'#ffe0e0'};
+  var coloriLight = {'1':'#d8f3dc','2':'#deeeff','3':'#f0e5ff','4':'#fef3e2','D':'#ffe5e5'};
   var tNum = turno==='D'?'D':turno.slice(-1);
   var col = colori[tNum]||'#2d6a4f';
   var colL = coloriLight[tNum]||'#d8f3dc';
 
+  // Calcola font-size adattivo in base al numero di persone
+  var np = persone.length;
+  var fs = np <= 8 ? 11 : np <= 14 ? 10 : np <= 20 ? 9 : 8;
+  var nameFs = fs + 1;
+  var cardPad = np <= 10 ? '7px 10px' : '5px 8px';
+  var cardGap = np <= 10 ? '6px' : '4px';
+
   var css = [
     '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");',
     '*{box-sizing:border-box;margin:0;padding:0}',
-    'body{font-family:"Inter",Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff}',
-    '.page{padding:18px 22px;max-width:820px;margin:0 auto}',
-    '.istr{border-left:5px solid '+col+';background:#fafafa;padding:12px 16px;margin-bottom:16px;font-size:11px;line-height:1.8;color:#333;border-radius:0 8px 8px 0}',
-    '.istr b{font-size:12px;display:block;margin-bottom:2px}',
-    '.header{border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,0.12)}',
-    '.header-main{background:'+col+';padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-end}',
-    '.header-main h1{color:#fff;font-size:22px;font-weight:700;letter-spacing:0.3px}',
-    '.header-main .data{color:rgba(255,255,255,0.85);font-size:13px;font-weight:400}',
-    '.header-stats{background:'+colL+';display:flex}',
-    '.stat{flex:1;padding:10px 14px;text-align:center;border-right:1px solid rgba(0,0,0,0.07)}',
-    '.stat:last-child{border-right:none}',
-    '.stat-n{font-size:24px;font-weight:700;color:'+col+';display:block;line-height:1.2}',
-    '.stat-l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px;display:block}',
-    '.ora-block{page-break-inside:avoid;break-inside:avoid}',
-    '.ora-row{display:flex;align-items:center;gap:12px;margin:16px 0 8px}',
-    '.ora-pill{background:'+col+';color:#fff;border-radius:20px;padding:4px 18px;font-size:13px;font-weight:600;letter-spacing:0.3px;white-space:nowrap}',
-    '.ora-line{flex:1;height:1.5px;background:#e8e8e8}',
-    '.ora-count{font-size:10px;color:#bbb;white-space:nowrap}',
-    '.card{display:grid;grid-template-columns:44px 1fr auto;border:1.5px solid #ebebeb;border-radius:10px;margin-bottom:7px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;box-shadow:0 1px 4px rgba(0,0,0,0.05)}',
-    '.card-check{background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:22px;border-right:1.5px solid #ebebeb;color:'+col+';min-height:70px}',
-    '.card-body{padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px}',
-    '.card-right{padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:6px;border-left:1.5px solid #ebebeb;background:#fafafa;min-width:110px}',
-    '.name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
-    '.codice{font-family:monospace;font-size:10px;color:#aaa;background:#f2f2f2;padding:2px 6px;border-radius:4px;font-weight:600}',
-    '.nome{font-size:14px;font-weight:700;color:#1a1a1a}',
-    '.badge{font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px}',
+    'body{font-family:"Inter",Arial,sans-serif;font-size:'+fs+'px;color:#1a1a1a;background:#fff}',
+    '.page{padding:14px 18px}',
+    // Istruzioni compatte in 2 colonne
+    '.istr{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;background:#fafafa;border-left:4px solid '+col+';padding:8px 12px;border-radius:0 6px 6px 0;font-size:'+(fs-1)+'px;line-height:1.7;color:#444}',
+    '.istr-full{grid-column:1/-1;font-weight:600;color:#333;font-size:'+fs+'px}',
+    // Header a due colonne: titolo + stats
+    '.header{display:grid;grid-template-columns:1fr auto;gap:0;border-radius:10px;overflow:hidden;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.10)}',
+    '.header-main{background:'+col+';padding:12px 16px}',
+    '.header-main h1{color:#fff;font-size:18px;font-weight:700;line-height:1.2}',
+    '.header-main .data{color:rgba(255,255,255,0.8);font-size:11px;margin-top:2px}',
+    '.header-stats{background:'+colL+';display:flex;flex-direction:column;justify-content:center;padding:0}',
+    '.stat{padding:6px 14px;text-align:center;border-bottom:1px solid rgba(0,0,0,0.06)}',
+    '.stat:last-child{border-bottom:none}',
+    '.stat-n{font-size:18px;font-weight:700;color:'+col+';display:block;line-height:1.1}',
+    '.stat-l{font-size:8px;color:#999;text-transform:uppercase;letter-spacing:0.5px}',
+    // Orari affiancati
+    '.ora-section{margin-bottom:8px}',
+    '.ora-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}',
+    '.ora-pill{background:'+col+';color:#fff;border-radius:16px;padding:2px 14px;font-size:11px;font-weight:600;white-space:nowrap}',
+    '.ora-line{flex:1;height:1px;background:#e8e8e8}',
+    '.ora-count{font-size:9px;color:#ccc;white-space:nowrap}',
+    // Card persona
+    '.card{display:grid;grid-template-columns:32px 1fr auto;border:1px solid #eee;border-radius:7px;margin-bottom:'+cardGap+';overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)}',
+    '.card-check{background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:16px;border-right:1px solid #eee;color:'+col+'}',
+    '.card-body{padding:'+cardPad+';display:flex;flex-direction:column;gap:2px}',
+    '.card-right{padding:'+cardPad+';display:flex;flex-direction:column;justify-content:center;gap:3px;border-left:1px solid #eee;background:#fafafa;min-width:85px}',
+    '.name-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap}',
+    '.codice{font-family:monospace;font-size:8px;color:#bbb;background:#f2f2f2;padding:1px 4px;border-radius:3px;font-weight:600}',
+    '.nome{font-size:'+nameFs+'px;font-weight:700;color:#1a1a1a}',
+    '.badge{font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px}',
     '.badge-warn{background:#fff3cd;color:#856404}',
     '.badge-danger{background:#ffe0e0;color:#c0392b}',
-    '.nucleo-row{display:flex;gap:12px;font-size:10px;color:#777;flex-wrap:wrap}',
-    '.nucleo-item{display:flex;gap:4px;align-items:center}',
-    '.nucleo-label{color:#bbb}',
-    '.nucleo-val{font-weight:600;color:#555}',
-    '.nucleo-val.hi{color:#e67e22}',
-    '.esig{font-size:10px;color:#856404;line-height:1.6;padding:2px 0}',
-    '.nota-area{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}',
-    '.nota-label{font-size:9px;color:#ccc;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}',
-    '.nota-text{font-size:9.5px;color:#aaa;font-style:italic;line-height:1.6;min-height:20px}',
-    '.nota-space{min-height:28px;border-bottom:1px solid #eee}',
-    '.extra-item{display:flex;align-items:center;gap:6px;font-size:10px;color:#555}',
-    '.extra-box{width:15px;height:15px;border:1.5px solid #ccc;border-radius:3px;flex-shrink:0;display:inline-block}',
+    '.meta{display:flex;gap:8px;font-size:'+(fs-1)+'px;color:#888;flex-wrap:wrap}',
+    '.meta b{color:#555;font-weight:600}',
+    '.meta .hi{color:#e67e22;font-weight:600}',
+    '.esig{font-size:'+(fs-1)+'px;color:#856404}',
+    '.nota-block{margin-top:3px;border-top:1px dashed #eee;padding-top:3px}',
+    '.nota-label{font-size:8px;color:#ddd;text-transform:uppercase;letter-spacing:0.4px}',
+    '.nota-text{font-size:'+(fs-1)+'px;color:#bbb;font-style:italic;line-height:1.5;min-height:14px}',
+    '.extra-item{display:flex;align-items:center;gap:4px;font-size:'+(fs-1)+'px;color:#666}',
+    '.extra-box{width:12px;height:12px;border:1.5px solid #ccc;border-radius:2px;flex-shrink:0}',
     '.extra-val{font-weight:700}',
-    '.extra-val.hi{color:#e67e22}',
-    '.footer{padding-top:8px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:9px;color:#ccc;margin-top:14px}',
-    '@page{size:A4 portrait;margin:1.2cm;@bottom-center{content:"Pagina " counter(page) " di " counter(pages);font-size:9px;color:#bbb}}',
-    '@media print{',
-    '  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-    '  .page{padding:8px 12px}',
-    '  .ora-block{page-break-inside:avoid;break-inside:avoid}',
-    '  .card{page-break-inside:avoid;break-inside:avoid}',
-    '}'
+    '.extra-hi{color:#e67e22;font-weight:700}',
+    '.footer{margin-top:10px;padding-top:6px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8px;color:#ccc}',
+    '@page{size:A4 portrait;margin:1cm}',
+    '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:8px 12px}}'
   ].join('\n');
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titolo+'</title><style>'+css+'</style></head><body><div class="page">';
 
+  // Istruzioni in 2 colonne
   html += '<div class="istr">'+
-    '<b>SEGNARE CON UNA CROCE ACCANTO AL NOME SE L\'UTENTE È PASSATO.</b>'+
-    'Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti, merendine se ci sono minori. '+
-    '<b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> (doppi se il nucleo è da 6 o più persone).'+
+    '<div class="istr-full">SEGNARE CON UNA CROCE ACCANTO AL NOME SE L\'UTENTE È PASSATO.</div>'+
+    '<div>Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti e merendine se ci sono minori.</div>'+
+    '<div><b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> — doppi se il nucleo è da 6 o più persone.</div>'+
     '</div>';
 
+  // Header: titolo a sx, stats a dx in colonna
   html += '<div class="header">'+
-    '<div class="header-main"><h1>'+titolo+'</h1><span class="data">'+dataTurno+'</span></div>'+
+    '<div class="header-main">'+
+      '<h1>'+titolo+'</h1>'+
+      '<div class="data">'+dataTurno+'</div>'+
+    '</div>'+
     '<div class="header-stats">'+
-    '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
-    '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo tot.</span></div>'+
-    '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
-    '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>'+
-    '</div></div>';
+      '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
+      '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo</span></div>'+
+      '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
+      '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>'+
+    '</div>'+
+  '</div>';
 
   orariSortati.forEach(function(ora){
     var gruppo = orariMap[ora];
-    html += '<div class="ora-block">';
-    html += '<div class="ora-row"><span class="ora-pill">'+ora+'</span><span class="ora-line"></span><span class="ora-count">'+gruppo.length+' '+(gruppo.length===1?'persona':'persone')+'</span></div>';
+    html += '<div class="ora-section">'+
+      '<div class="ora-row">'+
+        '<span class="ora-pill">'+ora+'</span>'+
+        '<span class="ora-line"></span>'+
+        '<span class="ora-count">'+gruppo.length+' '+(gruppo.length===1?'persona':'persone')+'</span>'+
+      '</div>';
 
     gruppo.forEach(function(p){
       var key = p.codice+'|'+turno;
@@ -882,37 +895,41 @@ function stampaTurno() {
       if (p.autocert==='manca') badges += '<span class="badge badge-danger">Autocert manca</span> ';
       if (p.daRegistrare) badges += '<span class="badge badge-warn">Da registrare</span>';
 
-      var nucItems = '';
-      if (p.totN) nucItems += '<span class="nucleo-item"><span class="nucleo-label">Nucleo</span><span class="nucleo-val">'+p.totN+'</span></span>';
-      if (p.ad)   nucItems += '<span class="nucleo-item"><span class="nucleo-label">Adulti</span><span class="nucleo-val">'+p.ad+'</span></span>';
-      if (p.min)  nucItems += '<span class="nucleo-item"><span class="nucleo-label">Minori</span><span class="nucleo-val">'+p.min+'</span></span>';
+      var meta = [];
+      if (p.totN) meta.push('Nucleo <b>'+p.totN+'</b>');
+      if (p.ad)   meta.push('Adulti <b>'+p.ad+'</b>');
+      if (p.min)  meta.push('Minori <b>'+p.min+'</b>');
 
       var rightHtml = '';
-      if (p.ol && parseInt(p.ol)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Olio <span class="extra-val'+(parseInt(p.ol)>1?' hi':'')+'">'+p.ol+'</span></div>';
-      if (p.ass && parseInt(p.ass)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Assorbenti <span class="extra-val'+(parseInt(p.ass)>1?' hi':'')+'">'+p.ass+'</span></div>';
-      if (p.pan && parseInt(p.pan)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Pannoloni <span class="extra-val'+(parseInt(p.pan)>1?' hi':'')+'">'+p.pan+'</span></div>';
+      if (p.ol && parseInt(p.ol)>0)  rightHtml += '<div class="extra-item"><span class="extra-box"></span>Olio <span class="'+(parseInt(p.ol)>1?'extra-hi':'extra-val')+'">'+p.ol+'</span></div>';
+      if (p.ass && parseInt(p.ass)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Ass. <span class="'+(parseInt(p.ass)>1?'extra-hi':'extra-val')+'">'+p.ass+'</span></div>';
+      if (p.pan && parseInt(p.pan)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Pan. <span class="'+(parseInt(p.pan)>1?'extra-hi':'extra-val')+'">'+p.pan+'</span></div>';
 
-      // Note esistenti + spazio per note manuali
-      var notaHtml = '<div class="nota-area">';
-      if (p.note) notaHtml += '<div class="nota-label">Note</div><div class="nota-text">'+p.note+'</div>';
-      else notaHtml += '<div class="nota-label">Note</div><div class="nota-space"></div>';
-      notaHtml += '</div>';
+      var notaHtml = '<div class="nota-block"><div class="nota-label">Note</div><div class="nota-text">'+(p.note||'')+'</div></div>';
 
       html += '<div class="card">'+
         '<div class="card-check">'+check+'</div>'+
         '<div class="card-body">'+
-          '<div class="name-row"><span class="codice">'+p.codice+'</span><span class="nome">'+p.nome+'</span>'+badges+'</div>'+
-          (nucItems?'<div class="nucleo-row">'+nucItems+'</div>':'')+
+          '<div class="name-row">'+
+            '<span class="codice">'+p.codice+'</span>'+
+            '<span class="nome">'+p.nome+'</span>'+
+            badges+
+          '</div>'+
+          (meta.length?'<div class="meta">'+meta.join('&ensp;')+'</div>':'')+
           (p.esigenze?'<div class="esig">⚠️ '+p.esigenze+'</div>':'')+
           notaHtml+
         '</div>'+
         '<div class="card-right">'+rightHtml+'</div>'+
       '</div>';
     });
-    html += '</div>'; // end ora-block
+
+    html += '</div>'; // ora-section
   });
 
-  html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
+  html += '<div class="footer">'+
+    '<span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span>'+
+    '<span>'+new Date().toLocaleDateString("it-IT")+'</span>'+
+  '</div>';
   html += '</div></body></html>';
 
   var win = window.open('', '_blank');
@@ -921,6 +938,106 @@ function stampaTurno() {
   win.focus();
   setTimeout(function(){ win.print(); }, 700);
 }
+
+function tornaATurni() {
+  document.getElementById('turni-list-view').style.display = 'block';
+  document.getElementById('turno-detail-view').style.display = 'none';
+}
+
+function aggiornaPresenza(codice, turno, checkbox) {
+  var presente = checkbox.checked ? 'SI' : 'NO';
+  var key = codice + '|' + turno;
+  var pres = presenze[key] || {};
+  salvaPresenzaSheet(codice, turno, presente, pres.nota||'', key, pres.ol||'', pres.ass||'', pres.pan||'');
+}
+
+function salvaNota(codice, turno) {
+  var el = document.getElementById('nota-'+codice);
+  var nuovoTesto = el.value.trim();
+  if (!nuovoTesto) return;
+  var p = null;
+  for (var i = 0; i < anagrafica.length; i++) {
+    if (anagrafica[i].codice === codice) { p = anagrafica[i]; break; }
+  }
+  if (!p) return;
+  var oggi = new Date();
+  var gg = oggi.getDate(), mm = oggi.getMonth()+1, aa = oggi.getFullYear();
+  var dataTag = '[' + (gg<10?'0'+gg:gg) + '/' + (mm<10?'0'+mm:mm) + '/' + aa + '] ';
+  var notaCompleta = p.note ? p.note + ' ' + dataTag + nuovoTesto : dataTag + nuovoTesto;
+  p.note = notaCompleta;
+  el.value = '';
+  var nd = document.getElementById('nota-display-'+codice);
+  if (nd) { nd.textContent = '📝 ' + notaCompleta; nd.style.display = 'block'; }
+  var btn = el.nextElementSibling;
+  btn.textContent = '...'; btn.disabled = true;
+  fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + '/values/' + encodeURIComponent('Anagrafica!H'+p.rowNum) + '?valueInputOption=USER_ENTERED', {
+    method:'PUT', headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+    body:JSON.stringify({range:'Anagrafica!H'+p.rowNum, values:[[notaCompleta]]})
+  }).then(function(r){
+    if (!r.ok) throw new Error('Errore '+r.status);
+    btn.textContent = '✓'; setTimeout(function(){ btn.textContent='Salva nota'; btn.disabled=false; }, 2000);
+  }).catch(function(e){ alert('Errore: '+e.message); btn.textContent='Salva nota'; btn.disabled=false; });
+}
+
+function chiudiTurno() {
+  if (!confirm('Chiudere il turno? Tutti gli utenti senza spunta verranno segnati come assenti.')) return;
+  var btn = document.getElementById('btn-chiudi-turno');
+  btn.textContent = 'Salvataggio...'; btn.disabled = true;
+  var tc = turnoAperto;
+  var dt = getDataTurno(tc) || '';
+  var persone = anagrafica.filter(function(p){ return p.turno===tc && isAttivo(p); });
+  var salvataggi = [];
+  persone.forEach(function(p2) {
+    var k2 = p2.codice+'|'+tc, pr2 = presenze[k2];
+    if (pr2 && pr2.presente==='SI') {
+      var ol2=pr2.ol||'', as2=pr2.ass||'', pa2=pr2.pan||'', ch=false;
+      if (parseInt(p2.ol||0)>0 && ol2!=='SI'){ol2='NO';ch=true;}
+      if (parseInt(p2.ass||0)>0 && as2!=='SI'){as2='NO';ch=true;}
+      if (parseInt(p2.pan||0)>0 && pa2!=='SI'){pa2='NO';ch=true;}
+      if (ch) salvaPresenzaSheet(p2.codice,tc,'SI',pr2.nota||'',k2,ol2,as2,pa2);
+    }
+  });
+  persone.forEach(function(p) {
+    var key=p.codice+'|'+tc, pres=presenze[key];
+    if (!pres||pres.presente!=='SI') {
+      var ol=pres?pres.ol||'':'', as=pres?pres.ass||'':'', pa=pres?pres.pan||'':'';
+      if (parseInt(p.ol||0)>0&&ol!=='SI') ol='NO';
+      if (parseInt(p.ass||0)>0&&as!=='SI') as='NO';
+      if (parseInt(p.pan||0)>0&&pa!=='SI') pa='NO';
+      salvataggi.push({codice:p.codice,turno:tc,dataTurno:dt,presente:'NO',nota:pres?pres.nota||'':'',ol:ol,ass:as,pan:pa,key:key,rowNum:pres?pres.rowNum:null});
+    }
+  });
+  if (!salvataggi.length){alert('Tutti già registrati.'); btn.textContent='🔒 Chiudi turno'; btn.disabled=false; return;}
+  var promises = salvataggi.map(function(s){
+    presenze[s.key]={presente:'NO',nota:s.nota,ol:s.ol,ass:s.ass,pan:s.pan,rowNum:s.rowNum};
+    if (s.rowNum) {
+      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
+        method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({valueInputOption:'USER_ENTERED',data:[
+          {range:'presenze!C'+s.rowNum,values:[[s.dataTurno]]},
+          {range:'presenze!D'+s.rowNum,values:[['NO']]},
+          {range:'presenze!E'+s.rowNum,values:[[s.nota]]},
+          {range:'presenze!F'+s.rowNum,values:[[s.ol]]},
+          {range:'presenze!G'+s.rowNum,values:[[s.ass]]},
+          {range:'presenze!H'+s.rowNum,values:[[s.pan]]}
+        ]})});
+    } else {
+      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:H:append?valueInputOption=USER_ENTERED',{
+        method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+        body:JSON.stringify({values:[[s.codice,s.turno,s.dataTurno,'NO',s.nota,s.ol,s.ass,s.pan]]})});
+    }
+  });
+  Promise.all(promises).then(function(){
+    fetchSheet('presenze!A1:H2000').then(function(r){
+      parsePresenze(r.values||[]);
+      apriTurno(tc);
+      btn.textContent='✓ Chiuso';
+      setTimeout(function(){btn.textContent='🔒 Chiudi turno';btn.disabled=false;},2000);
+      alert('Turno chiuso! '+salvataggi.length+' utenti segnati come NO.');
+    });
+  }).catch(function(e){alert('Errore: '+e.message);btn.textContent='🔒 Chiudi turno';btn.disabled=false;});
+}
+
 
 function aggiornaExtra(codice, turno, tipo, checked) {
   var key = codice + '|' + turno;
