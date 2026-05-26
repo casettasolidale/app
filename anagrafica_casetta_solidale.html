@@ -846,13 +846,15 @@ function stampaTurno() {
   '</div>';
 
   html += '<table><thead><tr>'+
-    '<th class="center" style="width:30px">✓</th>'+
+    '<th class="center" style="width:28px">✓</th>'+
+    '<th class="center" style="width:50px">Orario</th>'+
     '<th style="width:42px">Cod.</th>'+
-    '<th style="width:160px">Nome</th>'+
-    '<th class="center" style="width:28px">N</th>'+
-    '<th class="center" style="width:28px">Ad</th>'+
-    '<th class="center" style="width:28px">Min</th>'+
-    '<th style="width:120px">Mensili</th>'+
+    '<th style="width:150px">Nome</th>'+
+    '<th style="width:110px">Banco / Autocert</th>'+
+    '<th class="center" style="width:26px">N</th>'+
+    '<th class="center" style="width:26px">Ad</th>'+
+    '<th class="center" style="width:26px">Min</th>'+
+    '<th style="width:110px">Mensili</th>'+
     '<th>Esigenze / Note</th>'+
   '</tr></thead><tbody>';
 
@@ -879,10 +881,13 @@ function stampaTurno() {
       if(p.esigenze) esigNote+='<div class="esig">⚠️ '+p.esigenze+'</div>';
       if(p.note) esigNote+='<div class="nota">'+p.note+'</div>';
 
+      var bancoInfo = [p.banco, p.sitBanco].filter(function(v){return v&&v.trim();}).join(' — ');
       html+='<tr>'+
         '<td class="center">'+check+'</td>'+
+        '<td class="center" style="font-size:9.5px;font-weight:600;color:#555">'+ora+'</td>'+
         '<td><span class="codice">'+p.codice+'</span></td>'+
-        '<td><span style="font-size:9px;color:#aaa;margin-right:6px">'+ora+'</span><span class="nome">'+p.nome+'</span>'+(badges?' '+badges:'')+'</td>'+
+        '<td><span class="nome">'+p.nome+'</span>'+(badges?' '+badges:'')+'</td>'+
+        '<td style="font-size:8px;color:#555;line-height:1.4">'+bancoInfo+'</td>'+
         '<td class="center">'+(p.totN||'')+'</td>'+
         '<td class="center">'+(p.ad||'')+'</td>'+
         '<td class="center">'+(p.min||'')+'</td>'+
