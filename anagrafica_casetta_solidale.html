@@ -794,141 +794,110 @@ function stampaTurno() {
   var tNum=turno==='D'?'D':turno.slice(-1);
   var col=colori[tNum]||'#2d6a4f', colL=coloriLight[tNum]||'#d8f3dc';
 
-  var css=[
+  var css = [
     '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");',
     '*{box-sizing:border-box;margin:0;padding:0}',
-    'html,body{width:210mm;height:297mm;overflow:hidden}',
-    'body{font-family:"Inter",Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff}',
-    '.page{width:210mm;height:297mm;padding:12mm 14mm;display:flex;flex-direction:column;gap:8px;overflow:hidden}',
-    '.istr{display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;background:#fafafa;border-left:4px solid '+col+';padding:8px 12px;border-radius:0 6px 6px 0;font-size:9px;line-height:1.7;color:#444;flex-shrink:0}',
-    '.istr-full{grid-column:1/-1;font-weight:700;color:#222;font-size:10px}',
-    '.header{display:grid;grid-template-columns:1fr auto;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.12);flex-shrink:0}',
+    'body{font-family:"Inter",Arial,sans-serif;font-size:9px;color:#1a1a1a;background:#fff}',
+    '.page{padding:10mm 12mm}',
+    '.istr{border-left:3px solid '+col+';background:#fffde7;padding:5px 10px;margin-bottom:8px;font-size:8px;line-height:1.7;color:#444}',
+    '.header{display:grid;grid-template-columns:1fr auto auto auto auto;border-radius:8px;overflow:hidden;margin-bottom:8px;box-shadow:0 2px 6px rgba(0,0,0,0.10)}',
     '.header-main{background:'+col+';padding:10px 14px}',
-    '.header-main h1{color:#fff;font-size:17px;font-weight:700}',
-    '.header-main .data{color:rgba(255,255,255,0.8);font-size:10px;margin-top:2px}',
-    '.header-stats{background:'+colL+';display:flex;flex-direction:column;justify-content:center}',
-    '.stat{padding:5px 14px;text-align:center;border-bottom:1px solid rgba(0,0,0,0.07)}',
-    '.stat:last-child{border-bottom:none}',
-    '.stat-n{font-size:17px;font-weight:700;color:'+col+';display:block;line-height:1.1}',
-    '.stat-l{font-size:8px;color:#999;text-transform:uppercase;letter-spacing:0.5px}',
-    '.persone-wrap{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:6px}',
-    '.ora-section{display:flex;flex-direction:column;gap:3px}',
-    '.ora-row{display:flex;align-items:center;gap:8px}',
-    '.ora-pill{background:'+col+';color:#fff;border-radius:14px;padding:2px 12px;font-size:10px;font-weight:600;white-space:nowrap}',
-    '.ora-line{flex:1;height:1px;background:#eee}',
-    '.ora-count{font-size:8px;color:#ccc;white-space:nowrap}',
-    '.card{display:grid;grid-template-columns:30px 1fr auto;border:1px solid #eee;border-radius:7px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)}',
-    '.card-check{background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:15px;border-right:1px solid #eee;color:'+col+'}',
-    '.card-body{padding:5px 10px;display:flex;flex-direction:column;gap:2px;justify-content:center}',
-    '.card-right{padding:5px 8px;display:flex;flex-direction:column;justify-content:center;gap:3px;border-left:1px solid #eee;background:#fafafa;min-width:80px}',
-    '.name-row{display:flex;align-items:center;gap:5px;flex-wrap:wrap}',
-    '.codice{font-family:monospace;font-size:8px;color:#bbb;background:#f2f2f2;padding:1px 4px;border-radius:3px}',
-    '.nome{font-size:12px;font-weight:700}',
-    '.badge{font-size:8px;font-weight:600;padding:1px 4px;border-radius:3px}',
-    '.badge-warn{background:#fff3cd;color:#856404}',
-    '.badge-danger{background:#ffe0e0;color:#c0392b}',
-    '.meta{display:flex;gap:8px;font-size:9px;color:#999}',
-    '.meta b{color:#555}',
-    '.meta .hi{color:#e67e22;font-weight:700}',
-    '.esig{font-size:9px;color:#856404}',
-    '.nota-block{border-top:1px dashed #eee;margin-top:2px;padding-top:2px}',
-    '.nota-label{font-size:7px;color:#ddd;text-transform:uppercase;letter-spacing:0.4px}',
-    '.nota-text{font-size:8.5px;color:#bbb;font-style:italic;min-height:12px;line-height:1.4}',
-    '.extra-item{display:flex;align-items:center;gap:4px;font-size:9px;color:#666}',
-    '.extra-box{width:11px;height:11px;border:1.5px solid #ccc;border-radius:2px;flex-shrink:0}',
-    '.extra-val{font-weight:700}',
-    '.extra-hi{color:#e67e22;font-weight:700}',
-    '.footer{display:flex;justify-content:space-between;font-size:8px;color:#ccc;flex-shrink:0;border-top:1px solid #eee;padding-top:5px}',
-    '@page{size:A4 portrait;margin:0}',
-    '@media print{',
-    '  html,body{width:210mm;height:297mm;overflow:hidden}',
-    '  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
-    '  .page{padding:10mm 12mm}',
-    '}'
+    '.header-main h1{color:#fff;font-size:16px;font-weight:700;line-height:1.2}',
+    '.header-main .data{color:rgba(255,255,255,0.8);font-size:9px;margin-top:2px}',
+    '.stat{background:'+colL+';padding:6px 14px;text-align:center;border-left:1px solid rgba(0,0,0,0.07)}',
+    '.stat-n{font-size:16px;font-weight:700;color:'+col+';display:block;line-height:1.1}',
+    '.stat-l{font-size:7px;color:#999;text-transform:uppercase;letter-spacing:0.5px}',
+    'table{width:100%;border-collapse:collapse;table-layout:fixed}',
+    'th{background:'+colL+';color:'+col+';font-size:8px;font-weight:700;padding:4px 5px;text-align:left;border:1px solid #ccc}',
+    'th.center{text-align:center}',
+    'td{padding:3px 5px;border:1px solid #e0e0e0;vertical-align:middle;font-size:8.5px}',
+    'td.center{text-align:center}',
+    'tr:nth-child(even) td{background:#f9f9f9}',
+    'tr.ora-row td{background:#f0f8f3;font-weight:700;color:'+col+';font-size:9px}',
+    '.check{font-size:14px;color:#ccc;text-align:center;display:block}',
+    '.check.done{color:'+col+'}',
+    '.codice{font-family:monospace;font-size:8px;color:#aaa}',
+    '.nome{font-weight:700;font-size:9.5px}',
+    '.badge-warn{background:#fff3cd;color:#856404;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px}',
+    '.badge-danger{background:#ffe0e0;color:#c0392b;font-size:7px;font-weight:700;padding:1px 3px;border-radius:2px}',
+    '.extra{font-size:8px;line-height:1.6;color:#555}',
+    '.extra .hi{color:#e67e22;font-weight:700}',
+    '.extra .box{display:inline-block;width:10px;height:10px;border:1.5px solid #bbb;border-radius:2px;vertical-align:middle;margin-right:3px}',
+    '.esig{color:#856404;font-size:8px;line-height:1.5}',
+    '.nota{color:#aaa;font-size:7.5px;font-style:italic;line-height:1.5}',
+    '.footer{margin-top:8px;padding-top:5px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:7px;color:#ccc}',
+    '@page{size:A4 landscape;margin:0}',
+    '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:8mm 10mm}}'
   ].join('\n');
 
-  var html='<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titolo+'</title><style>'+css+'</style></head><body><div class="page">';
+  var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titolo+'</title><style>'+css+'</style></head><body><div class="page">';
 
-  html+='<div class="istr">'+
-    '<div class="istr-full">SEGNARE CON UNA CROCE SE L\'UTENTE È PASSATO.</div>'+
-    '<div>Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti e merendine se ci sono minori.</div>'+
-    '<div><b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> — doppi se il nucleo è da 6 o più persone.</div>'+
-  '</div>';
+  html += '<div class="istr"><b>SEGNARE CON UNA CROCE SE L\'UTENTE È PASSATO.</b> Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti e merendine se ci sono minori. <b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> (doppi se il nucleo è da 6 o più persone).</div>';
 
-  html+='<div class="header">'+
+  html += '<div class="header">'+
     '<div class="header-main"><h1>'+titolo+'</h1><div class="data">'+dataTurno+'</div></div>'+
-    '<div class="header-stats">'+
-      '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
-      '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo</span></div>'+
-      '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
-      '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>'+
-    '</div>'+
+    '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
+    '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo</span></div>'+
+    '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
+    '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>'+
   '</div>';
 
-  html+='<div class="persone-wrap">';
+  html += '<table><thead><tr>'+
+    '<th class="center" style="width:30px">✓</th>'+
+    '<th style="width:42px">Cod.</th>'+
+    '<th style="width:160px">Nome</th>'+
+    '<th class="center" style="width:28px">N</th>'+
+    '<th class="center" style="width:28px">Ad</th>'+
+    '<th class="center" style="width:28px">Min</th>'+
+    '<th style="width:120px">Olio / Assorbenti / Pannoloni</th>'+
+    '<th>Esigenze / Note</th>'+
+  '</tr></thead><tbody>';
 
   orariSortati.forEach(function(ora){
-    var gruppo=orariMap[ora];
-    html+='<div class="ora-section">'+
-      '<div class="ora-row">'+
-        '<span class="ora-pill">'+ora+'</span>'+
-        '<span class="ora-line"></span>'+
-        '<span class="ora-count">'+gruppo.length+' '+(gruppo.length===1?'persona':'persone')+'</span>'+
-      '</div>';
+    var gruppo = orariMap[ora];
+    html += '<tr class="ora-row"><td></td><td colspan="7">🕐 '+ora+' &nbsp;('+gruppo.length+' '+(gruppo.length===1?'persona':'persone')+')</td></tr>';
 
     gruppo.forEach(function(p){
       var key=p.codice+'|'+turno, pres=presenze[key]||{};
-      var check=pres.presente==='SI'?'☑':'□';
-      var badges='';
-      if(p.autocert==='manca') badges+='<span class="badge badge-danger">Autocert manca</span> ';
-      if(p.daRegistrare) badges+='<span class="badge badge-warn">Da registrare</span>';
-      var meta=[];
-      if(p.totN) meta.push('Nucleo <b>'+p.totN+'</b>');
-      if(p.ad)   meta.push('Adulti <b>'+p.ad+'</b>');
-      if(p.min)  meta.push('Minori <b>'+p.min+'</b>');
-      var rightHtml='';
-      if(p.ol&&parseInt(p.ol)>0)  rightHtml+='<div class="extra-item"><span class="extra-box"></span>Olio <span class="'+(parseInt(p.ol)>1?'extra-hi':'extra-val')+'">'+p.ol+'</span></div>';
-      if(p.ass&&parseInt(p.ass)>0) rightHtml+='<div class="extra-item"><span class="extra-box"></span>Ass. <span class="'+(parseInt(p.ass)>1?'extra-hi':'extra-val')+'">'+p.ass+'</span></div>';
-      if(p.pan&&parseInt(p.pan)>0) rightHtml+='<div class="extra-item"><span class="extra-box"></span>Pan. <span class="'+(parseInt(p.pan)>1?'extra-hi':'extra-val')+'">'+p.pan+'</span></div>';
+      var check = pres.presente==='SI'
+        ? '<span class="check done">☑</span>'
+        : '<span class="check">□</span>';
 
-      html+='<div class="card">'+
-        '<div class="card-check">'+check+'</div>'+
-        '<div class="card-body">'+
-          '<div class="name-row"><span class="codice">'+p.codice+'</span><span class="nome">'+p.nome+'</span>'+badges+'</div>'+
-          (meta.length?'<div class="meta">'+meta.join('&ensp;')+'</div>':'')+
-          (p.esigenze?'<div class="esig">⚠️ '+p.esigenze+'</div>':'')+
-          '<div class="nota-block"><div class="nota-label">Note</div><div class="nota-text">'+(p.note||'')+'</div></div>'+
-        '</div>'+
-        '<div class="card-right">'+rightHtml+'</div>'+
-      '</div>';
+      var badges='';
+      if(p.autocert==='manca') badges+='<span class="badge-danger">Autocert manca</span> ';
+      if(p.daRegistrare) badges+='<span class="badge-warn">Da registrare</span>';
+
+      var extraHtml='';
+      if(p.ol&&parseInt(p.ol)>0)  extraHtml+='<div><span class="box"></span>Olio <b class="'+(parseInt(p.ol)>1?'hi':'')+'">'+p.ol+'</b></div>';
+      if(p.ass&&parseInt(p.ass)>0) extraHtml+='<div><span class="box"></span>Assorbenti <b class="'+(parseInt(p.ass)>1?'hi':'')+'">'+p.ass+'</b></div>';
+      if(p.pan&&parseInt(p.pan)>0) extraHtml+='<div><span class="box"></span>Pannoloni <b class="'+(parseInt(p.pan)>1?'hi':'')+'">'+p.pan+'</b></div>';
+
+      var esigNote='';
+      if(p.esigenze) esigNote+='<div class="esig">⚠️ '+p.esigenze+'</div>';
+      if(p.note) esigNote+='<div class="nota">'+p.note+'</div>';
+
+      html+='<tr>'+
+        '<td class="center">'+check+'</td>'+
+        '<td><span class="codice">'+p.codice+'</span></td>'+
+        '<td><span class="nome">'+p.nome+'</span>'+(badges?' '+badges:'')+'</td>'+
+        '<td class="center">'+(p.totN||'')+'</td>'+
+        '<td class="center">'+(p.ad||'')+'</td>'+
+        '<td class="center">'+(p.min||'')+'</td>'+
+        '<td><div class="extra">'+extraHtml+'</div></td>'+
+        '<td>'+esigNote+'</td>'+
+      '</tr>';
     });
-    html+='</div>';
   });
 
-  html+='</div>';
-  html+='<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
-  html+='</div>';
-
-  // Script per scalare automaticamente il contenuto nella pagina
-  html+='<script>window.onload=function(){'+
-    'var page=document.querySelector(".page");'+
-    'var inner=document.querySelector(".persone-wrap");'+
-    'var avail=page.clientHeight;'+
-    'var actual=page.scrollHeight;'+
-    'if(actual>avail){'+
-      'var scale=avail/actual;'+
-      'page.style.transform="scale("+scale+")";'+
-      'page.style.transformOrigin="top left";'+
-      'page.style.width=(100/scale)+"%";'+
-    '}'+
-    'setTimeout(function(){window.print();},800);'+
-  '};<\/script>';
-  html+='</body></html>';
+  html += '</tbody></table>';
+  html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
+  html += '</div></body></html>';
 
   var win=window.open('','_blank');
   win.document.write(html);
   win.document.close();
   win.focus();
+  setTimeout(function(){win.print();},700);
 }
 
 function tornaATurni() {
