@@ -792,78 +792,91 @@ function stampaTurno() {
 
   var colori = {'1':'#2d6a4f','2':'#1565c0','3':'#7b1fa2','4':'#e67e22','D':'#c0392b'};
   var coloriLight = {'1':'#d8f3dc','2':'#e3f0ff','3':'#f3e5f5','4':'#fef3e2','D':'#ffe0e0'};
-  var tNum = turno==='D' ? 'D' : turno.slice(-1);
+  var tNum = turno==='D'?'D':turno.slice(-1);
   var col = colori[tNum]||'#2d6a4f';
   var colL = coloriLight[tNum]||'#d8f3dc';
 
   var css = [
     '@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");',
     '*{box-sizing:border-box;margin:0;padding:0}',
-    'body{font-family:"Inter",Arial,sans-serif;font-size:11px;color:#1a1a1a;background:#fff}',
-    '.page{padding:16px 20px;max-width:800px;margin:0 auto}',
-    '.istr{border-left:4px solid '+col+';background:#fafafa;padding:8px 12px;margin-bottom:14px;font-size:9px;line-height:1.7;color:#444;border-radius:0 6px 6px 0}',
-    '.header{border-radius:10px;overflow:hidden;margin-bottom:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}',
-    '.header-main{background:'+col+';padding:14px 18px;display:flex;justify-content:space-between;align-items:flex-end}',
-    '.header-main h1{color:#fff;font-size:18px;font-weight:700;letter-spacing:0.2px}',
-    '.header-main .data{color:rgba(255,255,255,0.8);font-size:11px;font-weight:400}',
+    'body{font-family:"Inter",Arial,sans-serif;font-size:12px;color:#1a1a1a;background:#fff}',
+    '.page{padding:18px 22px;max-width:820px;margin:0 auto}',
+    '.istr{border-left:5px solid '+col+';background:#fafafa;padding:12px 16px;margin-bottom:16px;font-size:11px;line-height:1.8;color:#333;border-radius:0 8px 8px 0}',
+    '.istr b{font-size:12px;display:block;margin-bottom:2px}',
+    '.header{border-radius:12px;overflow:hidden;margin-bottom:14px;box-shadow:0 3px 10px rgba(0,0,0,0.12)}',
+    '.header-main{background:'+col+';padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-end}',
+    '.header-main h1{color:#fff;font-size:22px;font-weight:700;letter-spacing:0.3px}',
+    '.header-main .data{color:rgba(255,255,255,0.85);font-size:13px;font-weight:400}',
     '.header-stats{background:'+colL+';display:flex}',
-    '.stat{flex:1;padding:8px 12px;text-align:center;border-right:1px solid rgba(0,0,0,0.06)}',
+    '.stat{flex:1;padding:10px 14px;text-align:center;border-right:1px solid rgba(0,0,0,0.07)}',
     '.stat:last-child{border-right:none}',
-    '.stat-n{font-size:20px;font-weight:700;color:'+col+';display:block;line-height:1.2}',
-    '.stat-l{font-size:8px;color:#888;text-transform:uppercase;letter-spacing:0.5px;margin-top:1px;display:block}',
-    '.ora-row{display:flex;align-items:center;gap:10px;margin:12px 0 6px}',
-    '.ora-pill{background:'+col+';color:#fff;border-radius:20px;padding:3px 14px;font-size:11px;font-weight:600;letter-spacing:0.3px}',
-    '.ora-line{flex:1;height:1px;background:#e0e0e0}',
-    '.ora-count{font-size:9px;color:#aaa;white-space:nowrap}',
-    '.card{display:grid;grid-template-columns:36px 1fr auto;border:1px solid #eee;border-radius:8px;margin-bottom:5px;overflow:hidden;page-break-inside:avoid;box-shadow:0 1px 3px rgba(0,0,0,0.04)}',
-    '.card-check{background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:18px;border-right:1px solid #eee;color:'+col+';min-height:52px}',
-    '.card-body{padding:7px 12px;display:flex;flex-direction:column;justify-content:center;gap:3px}',
-    '.card-right{padding:7px 10px;display:flex;flex-direction:column;justify-content:center;gap:4px;border-left:1px solid #eee;background:#fafafa;min-width:90px}',
-    '.name-row{display:flex;align-items:center;gap:6px;flex-wrap:wrap}',
-    '.codice{font-family:monospace;font-size:9px;color:#999;background:#f0f0f0;padding:1px 5px;border-radius:3px;font-weight:600}',
-    '.nome{font-size:12px;font-weight:700;color:#1a1a1a}',
-    '.badge{font-size:8px;font-weight:600;padding:1px 5px;border-radius:3px}',
+    '.stat-n{font-size:24px;font-weight:700;color:'+col+';display:block;line-height:1.2}',
+    '.stat-l{font-size:9px;color:#888;text-transform:uppercase;letter-spacing:0.6px;margin-top:2px;display:block}',
+    '.ora-block{page-break-inside:avoid;break-inside:avoid}',
+    '.ora-row{display:flex;align-items:center;gap:12px;margin:16px 0 8px}',
+    '.ora-pill{background:'+col+';color:#fff;border-radius:20px;padding:4px 18px;font-size:13px;font-weight:600;letter-spacing:0.3px;white-space:nowrap}',
+    '.ora-line{flex:1;height:1.5px;background:#e8e8e8}',
+    '.ora-count{font-size:10px;color:#bbb;white-space:nowrap}',
+    '.card{display:grid;grid-template-columns:44px 1fr auto;border:1.5px solid #ebebeb;border-radius:10px;margin-bottom:7px;overflow:hidden;page-break-inside:avoid;break-inside:avoid;box-shadow:0 1px 4px rgba(0,0,0,0.05)}',
+    '.card-check{background:'+colL+';display:flex;align-items:center;justify-content:center;font-size:22px;border-right:1.5px solid #ebebeb;color:'+col+';min-height:70px}',
+    '.card-body{padding:10px 14px;display:flex;flex-direction:column;justify-content:center;gap:4px}',
+    '.card-right{padding:10px 12px;display:flex;flex-direction:column;justify-content:center;gap:6px;border-left:1.5px solid #ebebeb;background:#fafafa;min-width:110px}',
+    '.name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}',
+    '.codice{font-family:monospace;font-size:10px;color:#aaa;background:#f2f2f2;padding:2px 6px;border-radius:4px;font-weight:600}',
+    '.nome{font-size:14px;font-weight:700;color:#1a1a1a}',
+    '.badge{font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px}',
     '.badge-warn{background:#fff3cd;color:#856404}',
     '.badge-danger{background:#ffe0e0;color:#c0392b}',
-    '.nucleo-row{display:flex;gap:10px;font-size:9px;color:#666;flex-wrap:wrap}',
-    '.nucleo-item{display:flex;gap:3px}',
-    '.nucleo-label{color:#aaa}',
-    '.nucleo-val{font-weight:600;color:#444}',
+    '.nucleo-row{display:flex;gap:12px;font-size:10px;color:#777;flex-wrap:wrap}',
+    '.nucleo-item{display:flex;gap:4px;align-items:center}',
+    '.nucleo-label{color:#bbb}',
+    '.nucleo-val{font-weight:600;color:#555}',
     '.nucleo-val.hi{color:#e67e22}',
-    '.esig{font-size:9px;color:#856404;line-height:1.5}',
-    '.nota{font-size:8.5px;color:#aaa;font-style:italic;line-height:1.5}',
-    '.extra-item{display:flex;align-items:center;gap:5px;font-size:9px;color:#555}',
-    '.extra-box{width:13px;height:13px;border:1.5px solid #bbb;border-radius:2px;flex-shrink:0;display:inline-block}',
+    '.esig{font-size:10px;color:#856404;line-height:1.6;padding:2px 0}',
+    '.nota-area{margin-top:6px;border-top:1px dashed #eee;padding-top:6px}',
+    '.nota-label{font-size:9px;color:#ccc;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:2px}',
+    '.nota-text{font-size:9.5px;color:#aaa;font-style:italic;line-height:1.6;min-height:20px}',
+    '.nota-space{min-height:28px;border-bottom:1px solid #eee}',
+    '.extra-item{display:flex;align-items:center;gap:6px;font-size:10px;color:#555}',
+    '.extra-box{width:15px;height:15px;border:1.5px solid #ccc;border-radius:3px;flex-shrink:0;display:inline-block}',
     '.extra-val{font-weight:700}',
     '.extra-val.hi{color:#e67e22}',
-    '.footer{margin-top:18px;padding-top:8px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:8px;color:#ccc}',
-    '@page{size:A4 portrait;margin:1cm}',
-    '@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.page{padding:6px 10px}}'
+    '.footer{padding-top:8px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:9px;color:#ccc;margin-top:14px}',
+    '@page{size:A4 portrait;margin:1.2cm;@bottom-center{content:"Pagina " counter(page) " di " counter(pages);font-size:9px;color:#bbb}}',
+    '@media print{',
+    '  body{-webkit-print-color-adjust:exact;print-color-adjust:exact}',
+    '  .page{padding:8px 12px}',
+    '  .ora-block{page-break-inside:avoid;break-inside:avoid}',
+    '  .card{page-break-inside:avoid;break-inside:avoid}',
+    '}'
   ].join('\n');
 
   var html = '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>'+titolo+'</title><style>'+css+'</style></head><body><div class="page">';
 
-  html += '<div class="istr"><b>SEGNARE CON UNA CROCE ACCANTO AL NOME SE L\'UTENTE È PASSATO.</b> '+
+  html += '<div class="istr">'+
+    '<b>SEGNARE CON UNA CROCE ACCANTO AL NOME SE L\'UTENTE È PASSATO.</b>'+
     'Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti, merendine se ci sono minori. '+
-    '<b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> (doppi se il nucleo è da 6 o più persone).</div>';
+    '<b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> (doppi se il nucleo è da 6 o più persone).'+
+    '</div>';
 
   html += '<div class="header">'+
     '<div class="header-main"><h1>'+titolo+'</h1><span class="data">'+dataTurno+'</span></div>'+
     '<div class="header-stats">'+
-      '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
-      '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo tot.</span></div>'+
-      '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
-      '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>'+
+    '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
+    '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo tot.</span></div>'+
+    '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
+    '<div class="stat"><span class="stat-n">'+totMin+'</span><span class="stat-l">Minori</span></div>'+
     '</div></div>';
 
   orariSortati.forEach(function(ora){
     var gruppo = orariMap[ora];
+    html += '<div class="ora-block">';
     html += '<div class="ora-row"><span class="ora-pill">'+ora+'</span><span class="ora-line"></span><span class="ora-count">'+gruppo.length+' '+(gruppo.length===1?'persona':'persone')+'</span></div>';
 
     gruppo.forEach(function(p){
       var key = p.codice+'|'+turno;
       var pres = presenze[key]||{};
-      var check = pres.presente==='SI' ? '☑' : '□';
+      var check = pres.presente==='SI'?'☑':'□';
 
       var badges = '';
       if (p.autocert==='manca') badges += '<span class="badge badge-danger">Autocert manca</span> ';
@@ -879,20 +892,27 @@ function stampaTurno() {
       if (p.ass && parseInt(p.ass)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Assorbenti <span class="extra-val'+(parseInt(p.ass)>1?' hi':'')+'">'+p.ass+'</span></div>';
       if (p.pan && parseInt(p.pan)>0) rightHtml += '<div class="extra-item"><span class="extra-box"></span>Pannoloni <span class="extra-val'+(parseInt(p.pan)>1?' hi':'')+'">'+p.pan+'</span></div>';
 
+      // Note esistenti + spazio per note manuali
+      var notaHtml = '<div class="nota-area">';
+      if (p.note) notaHtml += '<div class="nota-label">Note</div><div class="nota-text">'+p.note+'</div>';
+      else notaHtml += '<div class="nota-label">Note</div><div class="nota-space"></div>';
+      notaHtml += '</div>';
+
       html += '<div class="card">'+
         '<div class="card-check">'+check+'</div>'+
         '<div class="card-body">'+
           '<div class="name-row"><span class="codice">'+p.codice+'</span><span class="nome">'+p.nome+'</span>'+badges+'</div>'+
           (nucItems?'<div class="nucleo-row">'+nucItems+'</div>':'')+
           (p.esigenze?'<div class="esig">⚠️ '+p.esigenze+'</div>':'')+
-          (p.note?'<div class="nota">'+p.note+'</div>':'')+
+          notaHtml+
         '</div>'+
         '<div class="card-right">'+rightHtml+'</div>'+
       '</div>';
     });
+    html += '</div>'; // end ora-block
   });
 
-  html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
+  html += '<div class="footer"><span>Anagrafica Casetta Solidale — '+titolo+' — '+dataTurno+'</span><span>'+new Date().toLocaleDateString("it-IT")+'</span></div>';
   html += '</div></body></html>';
 
   var win = window.open('', '_blank');
