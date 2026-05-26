@@ -838,7 +838,7 @@ function stampaTurno() {
   html += '<div class="istr"><b>SEGNARE CON UNA CROCE SE L\'UTENTE È PASSATO.</b> Comporre il pacco in base al totale del nucleo, aumentando latte, biscotti e merendine se ci sono minori. <b>SEGNARE GLI ASSORBENTI E I MENSILI DATI</b> (doppi se il nucleo è da 6 o più persone).</div>';
 
   html += '<div class="header">'+
-    '<div class="header-main"><h1>'+titolo+'</h1><div class="data">'+dataTurno+'</div></div>'+
+    (function(){var num=turno==='D'?'':turno.slice(-1);var lbl=turno==='D'?dataTurno+' - domicilio':dataTurno+' - turno '+num;return '<div class="header-main"><h1>'+lbl+'</h1></div>';})()+
     '<div class="stat"><span class="stat-n">'+totP+'</span><span class="stat-l">Persone</span></div>'+
     '<div class="stat"><span class="stat-n">'+totN+'</span><span class="stat-l">Nucleo</span></div>'+
     '<div class="stat"><span class="stat-n">'+totAd+'</span><span class="stat-l">Adulti</span></div>'+
@@ -858,7 +858,7 @@ function stampaTurno() {
 
   orariSortati.forEach(function(ora){
     var gruppo = orariMap[ora];
-    html += '<tr class="ora-row"><td></td><td colspan="7">🕐 '+ora+' &nbsp;('+gruppo.length+' '+(gruppo.length===1?'persona':'persone')+')</td></tr>';
+    /* orario inline */
 
     gruppo.forEach(function(p){
       var key=p.codice+'|'+turno, pres=presenze[key]||{};
@@ -882,7 +882,7 @@ function stampaTurno() {
       html+='<tr>'+
         '<td class="center">'+check+'</td>'+
         '<td><span class="codice">'+p.codice+'</span></td>'+
-        '<td><span class="nome">'+p.nome+'</span>'+(badges?' '+badges:'')+'</td>'+
+        '<td><span style="font-size:9px;color:#aaa;margin-right:6px">'+ora+'</span><span class="nome">'+p.nome+'</span>'+(badges?' '+badges:'')+'</td>'+
         '<td class="center">'+(p.totN||'')+'</td>'+
         '<td class="center">'+(p.ad||'')+'</td>'+
         '<td class="center">'+(p.min||'')+'</td>'+
