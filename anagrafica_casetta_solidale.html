@@ -422,7 +422,6 @@ function loginGoogle() {
       fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + accessToken } })
         .then(function(r){ return r.json(); }).then(function(u) {
           document.getElementById('user-name').textContent = u.name || u.email;
-          if (u.picture) document.getElementById('user-avatar').src = u.picture;
           document.getElementById('login-screen').style.display = 'none';
           document.getElementById('app-screen').style.display = 'block';
           document.getElementById('user-info').style.display = 'flex';
