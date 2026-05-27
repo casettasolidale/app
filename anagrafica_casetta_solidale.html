@@ -324,21 +324,361 @@ var LINGUE = [
 
 var MSGS = {
   it: { normal: function(n,g,o){ return 'Ciao, il tuo appuntamento per ritirare il pacco è '+g+' alle '+o+'. Ti aspettiamo! Se non puoi passare avvisaci :)'; }, dom: function(n,g){ return 'Ciao, ti informiamo che il tuo pacco verrà consegnato a domicilio '+g+'. Ti contatteremo per comunicarti l\'orario esatto. Per qualunque cosa scrivici.'; } },
-  en: { normal: function(n,g,o){ return 'Hello '+n+', your appointment to collect your food parcel is on '+g+' at '+o+'. We look forward to seeing you! Feel free to write to us for anything.'; }, dom: function(n,g){ return 'Hello '+n+', we would like to inform you that your food parcel will be delivered to your home on '+g+'. We will contact you to let you know the exact time. Feel free to write to us for anything.'; } },
-  fr: { normal: function(n,g,o){ return 'Bonjour '+n+', votre rendez-vous pour recuperer le colis est '+g+' a '+o+'. On vous attend! Pour tout renseignement, ecrivez-nous.'; }, dom: function(n,g){ return 'Bonjour '+n+', nous vous informons que votre colis sera livre a domicile '+g+'. Nous vous contacterons pour vous communiquer l\'heure exacte.'; } },
-  de: { normal: function(n,g,o){ return 'Hallo '+n+', Ihr Termin zur Abholung des Pakets ist am '+g+' um '+o+' Uhr. Wir freuen uns auf Sie! Bei Fragen schreiben Sie uns gerne.'; }, dom: function(n,g){ return 'Hallo '+n+', wir mochten Sie informieren, dass Ihr Paket am '+g+' nach Hause geliefert wird. Wir werden Sie kontaktieren, um Ihnen die genaue Uhrzeit mitzuteilen.'; } },
-  es: { normal: function(n,g,o){ return 'Hola '+n+', tu cita para recoger el paquete es el '+g+' a las '+o+'. Te esperamos! Para cualquier cosa escribenos.'; }, dom: function(n,g){ return 'Hola '+n+', te informamos que tu paquete sera entregado a domicilio el '+g+'. Nos pondremos en contacto contigo para comunicarte la hora exacta.'; } },
-  uk: { normal: function(n,g,o){ return 'Привіт '+n+', ваш запис для отримання пакунка — '+g+' о '+o+'. Чекаємо на вас! З будь-яких питань пишіть нам.'; }, dom: function(n,g){ return 'Привіт '+n+', повідомляємо, що ваш пакунок буде доставлено додому '+g+'. Ми зв\'яжемося з вами, щоб повідомити точний час.'; } },
-  ro: { normal: function(n,g,o){ return 'Buna '+n+', programarea ta pentru a ridica pachetul este '+g+' la ora '+o+'. Te asteptam! Pentru orice intrebare scrie-ne.'; }, dom: function(n,g){ return 'Buna '+n+', te informam ca pachetul tau va fi livrat la domiciliu '+g+'. Te vom contacta pentru a-ti comunica ora exacta.'; } },
-  pt: { normal: function(n,g,o){ return 'Ola '+n+', a sua consulta para levantar o pacote e '+g+' as '+o+'. Estamos a sua espera! Para qualquer coisa escreva-nos.'; }, dom: function(n,g){ return 'Ola '+n+', informamos que o seu pacote sera entregue em casa no dia '+g+'. Entraremos em contacto para informar o horario exato.'; } },
-  ar: { normal: function(n,g,o){ return 'مرحباً '+n+'، موعدك لاستلام الحقيبة هو '+g+' الساعة '+o+'. بانتظارك! لأي استفسار تواصل معنا.'; }, dom: function(n,g){ return 'مرحباً '+n+'، نعلمك أن حقيبتك ستُسلَّم إلى منزلك '+g+'. سنتواصل معك لإبلاغك بالوقت المحدد.'; } },
-  ur: { normal: function(n,g,o){ return 'ہیلو '+n+'، پیکیج لینے کا آپ کا وقت '+g+' کو '+o+' بجے ہے۔ ہم آپ کا انتظار کر رہے ہیں! کسی بھی چیز کے لیے ہمیں لکھیں۔'; }, dom: function(n,g){ return 'ہیلو '+n+'، ہم آپ کو بتانا چاہتے ہیں کہ آپ کا پیکیج '+g+' کو گھر پہنچایا جائے گا۔ ہم آپ سے وقت بتانے کے لیے رابطہ کریں گے۔'; } },
-  hi: { normal: function(n,g,o){ return 'नमस्ते '+n+', पैकेज लेने की आपकी नियुक्ति '+g+' को '+o+' बजे है। हम आपका इंतजार करेंगे! किसी भी चीज के लिए हमें लिखें।'; }, dom: function(n,g){ return 'नमस्ते '+n+', हम आपको सूचित करना चाहते हैं कि आपका पैकेज '+g+' को घर पर डिलीवर किया जाएगा। हम आपसे सटीक समय बताने के लिए संपर्क करेंगे।'; } },
-  bn: { normal: function(n,g,o){ return 'হ্যালো '+n+', আপনার পার্সেল নেওয়ার অ্যাপয়েন্টমেন্ট '+g+' তারিখে '+o+' সময়ে। আমরা আপনার জন্য অপেক্ষা করছি!'; }, dom: function(n,g){ return 'হ্যালো '+n+', আমরা জানাচ্ছি যে আপনার পার্সেলটি '+g+' তারিখে বাড়িতে ডেলিভারি দেওয়া হবে।'; } },
-  tl: { normal: function(n,g,o){ return 'Kumusta '+n+', ang iyong appointment para kunin ang pakete ay '+g+' ng '+o+'. Hinihintay ka namin! Para sa anumang katanungan, sumulat sa amin.'; }, dom: function(n,g){ return 'Kumusta '+n+', nais naming ipaalam na ang iyong pakete ay ihahatid sa bahay mo sa '+g+'. Makikipag-ugnayan kami sa iyo para ipaalam ang eksaktong oras.'; } },
-  pl: { normal: function(n,g,o){ return 'Czesc '+n+', Twoja wizyta po odbior paczki jest zaplanowana na '+g+' o godz. '+o+'. Czekamy na Ciebie! W razie pytan napisz do nas.'; }, dom: function(n,g){ return 'Czesc '+n+', informujemy, ze Twoja paczka zostanie dostarczona do domu '+g+'. Skontaktujemy sie z Toba, aby podac dokladna godzine.'; } },
-  sw: { normal: function(n,g,o){ return 'Habari '+n+', miadi yako ya kuchukua kifurushi ni '+g+' saa '+o+'. Tunakusubiri! Kwa chochote, tuandikia.'; }, dom: function(n,g){ return 'Habari '+n+', tunakujulisha kwamba kifurushi chako kitawasilishwa nyumbani kwako '+g+'. Tutawasiliana nawe kukuambia wakati halisi.'; } }
+  en: { normal: function(n,g,o){ return 'Hello, your appointment to collect your food parcel is on '+g+' at '+o+'. We look forward to seeing you! If you can't make it, please let us know :)'; }, dom: function(n,g){ return 'Hello, we would like to inform you that your food parcel will be delivered to your home on '+g+'. We will contact you to let you know the exact time. Feel free to write to us for anything.'; } },
+  fr: { normal: function(n,g,o){ return 'Bonjour, votre rendez-vous pour récupérer le colis est le '+g+' à '+o+'. On vous attend! Si vous ne pouvez pas venir, prévenez-nous :)'; }, dom: function(n,g){ return 'Bonjour, nous vous informons que votre colis sera livré à domicile le '+g+'. Nous vous contacterons pour vous communiquer l'heure exacte. Pour tout renseignement, écrivez-nous.'; } },
+  de: { normal: function(n,g,o){ return 'Hallo, Ihr Termin zur Abholung des Pakets ist am '+g+' um '+o+' Uhr. Wir freuen uns auf Sie! Falls Sie nicht kommen können, geben Sie uns bitte Bescheid :)'; }, dom: function(n,g){ return 'Hallo, wir möchten Sie informieren, dass Ihr Paket am '+g+' nach Hause geliefert wird. Wir werden Sie kontaktieren, um Ihnen die genaue Uhrzeit mitzuteilen. Bei Fragen schreiben Sie uns.'; } },
+  es: { normal: function(n,g,o){ return 'Hola, tu cita para recoger el paquete es el '+g+' a las '+o+'. Te esperamos! Si no puedes venir avisanos :)'; }, dom: function(n,g){ return 'Hola, te informamos que tu paquete será entregado a domicilio el '+g+'. Nos pondremos en contacto contigo para comunicarte la hora exacta. Para cualquier cosa escribenos.'; } },
+  uk: { normal: function(n,g,o){ return 'Привіт, ваш запис для отримання пакунка — '+g+' о '+o+'. Чекаємо на вас! Якщо не зможете прийти, повідомте нас :)'; }, dom: function(n,g){ return 'Привіт, повідомляємо, що ваш пакунок буде доставлено додому '+g+'. Ми зв'яжемося з вами, щоб повідомити точний час. З будь-яких питань пишіть нам.'; } },
+  ro: { normal: function(n,g,o){ return 'Buna, programarea ta pentru a ridica pachetul este '+g+' la ora '+o+'. Te asteptam! Daca nu poti veni anunta-ne :)'; }, dom: function(n,g){ return 'Buna, te informam ca pachetul tau va fi livrat la domiciliu '+g+'. Te vom contacta pentru a-ti comunica ora exacta. Pentru orice intrebare scrie-ne.'; } },
+  pt: { normal: function(n,g,o){ return 'Olá, a sua consulta para levantar o pacote é '+g+' às '+o+'. Estamos à sua espera! Se não puder vir avise-nos :)'; }, dom: function(n,g){ return 'Olá, informamos que o seu pacote será entregue em casa no dia '+g+'. Entraremos em contacto para informar o horário exato. Para qualquer coisa escreva-nos.'; } },
+  ar: { normal: function(n,g,o){ return 'مرحباً، موعدك لاستلام الحقيبة هو '+g+' الساعة '+o+'. بانتظارك! إذا لم تتمكن من الحضور أعلمنا :)'; }, dom: function(n,g){ return 'مرحباً، نعلمك أن حقيبتك ستُسلَّم إلى منزلك '+g+'. سنتواصل معك لإبلاغك بالوقت المحدد. لأي استفسار تواصل معنا.'; } },
+  ur: { normal: function(n,g,o){ return 'ہیلو، پیکیج لینے کا آپ کا وقت '+g+' کو '+o+' بجے ہے۔ ہم آپ کا انتظار کر رہے ہیں! اگر نہیں آ سکتے تو ہمیں بتائیں :)'; }, dom: function(n,g){ return 'ہیلو، ہم آپ کو بتانا چاہتے ہیں کہ آپ کا پیکیج '+g+' کو گھر پہنچایا جائے گا۔ ہم آپ سے وقت بتانے کے لیے رابطہ کریں گے۔ کسی بھی چیز کے لیے ہمیں لکھیں۔'; } },
+  hi: { normal: function(n,g,o){ return 'नमस्ते, पैकेज लेने की आपकी नियुक्ति '+g+' को '+o+' बजे है। हम आपका इंतजार करेंगे! अगर नहीं आ सकते तो हमें बताएं :)'; }, dom: function(n,g){ return 'नमस्ते, हम आपको सूचित करना चाहते हैं कि आपका पैकेज '+g+' को घر पर डिलीवर किया जाएगा। हम आपसे सटीक समय बताने के लिए संपर्क करेंगे। किसी भी चीज के लिए हमें लिखें।'; } },
+  bn: { normal: function(n,g,o){ return 'হ্যালো, আপনার পার্সেল নেওয়ার অ্যাপয়েন্টমেন্ট '+g+' তারিখে '+o+' সময়ে। আমরা আপনার জন্য অপেক্ষা করছি! আসতে না পারলে আমাদের জানান :)'; }, dom: function(n,g){ return 'হ্যালো, আমরা জানাচ্ছি যে আপনার পার্সেলটি '+g+' তারিখে বাড়িতে ডেলিভারি দেওয়া হবে। সময় জানাতে আমরা আপনার সাথে যোগাযোগ করব। যেকোনো প্রশ্নে আমাদের লিখুন।'; } },
+  tl: { normal: function(n,g,o){ return 'Kumusta, ang iyong appointment para kunin ang pakete ay '+g+' ng '+o+'. Hinihintay ka namin! Kung hindi ka makakarating, ipaalam sa amin :)'; }, dom: function(n,g){ return 'Kumusta, nais naming ipaalam na ang iyong pakete ay ihahatid sa bahay mo sa '+g+'. Makikipag-ugnayan kami sa iyo para ipaalam ang eksaktong oras. Para sa anumang katanungan, sumulat sa amin.'; } },
+  pl: { normal: function(n,g,o){ return 'Czesc, Twoja wizyta po odbior paczki jest zaplanowana na '+g+' o godz. '+o+'. Czekamy na Ciebie! Jesli nie mozesz przyjsc, daj nam znac :)'; }, dom: function(n,g){ return 'Czesc, informujemy, ze Twoja paczka zostanie dostarczona do domu '+g+'. Skontaktujemy sie z Toba, aby podac dokladna godzine. W razie pytan napisz do nas.'; } },
+  sw: { normal: function(n,g,o){ return 'Habari, miadi yako ya kuchukua kifurushi ni '+g+' saa '+o+'. Tunakusubiri! Kama huwezi kuja tujulishe :)'; }, dom: function(n,g){ return 'Habari, tunakujulisha kwamba kifurushi chako kitawasilishwa nyumbani kwako '+g+'. Tutawasiliana nawe kukuambia wakati halisi. Kwa chochote, tuandikia.'; } }
+};!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anagrafica Casetta Solidale</title>
+<style>
+:root {
+  --verde: #2d6a4f; --verde-light: #d8f3dc; --grigio: #f8f9fa;
+  --bordo: #e0e0e0; --testo: #1a1a1a; --testo-muted: #6c757d;
+  --rosso: #c0392b; --blu: #1565c0; --blu-light: #e3f0ff;
+  --arancio: #e67e22; --radius: 10px; --shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--grigio); color: var(--testo); min-height: 100vh; }
+header { background: var(--verde); color: white; padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between; height: 56px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+.logo { font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+#user-info { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+#user-avatar { width: 32px; height: 32px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5); }
+#btn-logout { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+.container { max-width: 900px; margin: 0 auto; padding: 1.5rem 1rem; }
+#login-screen { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 56px); }
+.login-card { background: white; border-radius: 16px; padding: 3rem 2.5rem; text-align: center; box-shadow: var(--shadow); max-width: 380px; width: 100%; }
+.login-card h1 { font-size: 22px; font-weight: 700; color: var(--verde); margin-bottom: 8px; }
+.login-card p { font-size: 14px; color: var(--testo-muted); margin-bottom: 2rem; line-height: 1.6; }
+.leaf { font-size: 48px; margin-bottom: 1rem; display: block; }
+#btn-google { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; padding: 12px; border: 1.5px solid var(--bordo); border-radius: var(--radius); background: white; font-size: 15px; font-weight: 500; cursor: pointer; color: var(--testo); }
+#btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
+.nav-tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; background: white; padding: 4px; border-radius: var(--radius); box-shadow: var(--shadow); }
+.nav-tab { flex: 1; padding: 9px 8px; border: none; background: transparent; border-radius: 7px; font-size: 13px; font-weight: 500; cursor: pointer; color: var(--testo-muted); }
+.nav-tab.active { background: var(--verde); color: white; }
+.section { display: none; }
+.section.active { display: block; }
+.card { background: white; border-radius: var(--radius); padding: 1.25rem; box-shadow: var(--shadow); margin-bottom: 1rem; }
+.card-title { font-size: 14px; font-weight: 600; color: var(--testo-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 1rem; }
+.search-wrap { position: relative; margin-bottom: 1rem; }
+.search-wrap input { width: 100%; padding: 11px 16px 11px 42px; border: 1.5px solid var(--bordo); border-radius: var(--radius); font-size: 15px; background: white; }
+.search-wrap input:focus { outline: none; border-color: var(--verde); }
+.search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--testo-muted); }
+.person-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--grigio); }
+.person-row:last-child { border-bottom: none; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--verde-light); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--verde); flex-shrink: 0; }
+.person-info { flex: 1; min-width: 0; }
+.person-name { font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+.person-meta { font-size: 12px; color: var(--testo-muted); display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tag { display: inline-block; padding: 2px 7px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.tag-codice { background: #f0f0f0; color: #555; }
+.tag-wa { background: #dcf8c6; color: #1a7a2a; }
+.tag-sms { background: var(--blu-light); color: var(--blu); }
+.tag-chiama { background: #fef3e2; color: var(--arancio); }
+.tag-turno { background: var(--verde-light); color: var(--verde); }
+.badge-warn { background: #fff3cd; color: #856404; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-danger { background: #ffe0e0; color: var(--rosso); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.btn-edit { background: var(--grigio); border: 1px solid var(--bordo); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 16px; flex-shrink: 0; }
+.btn-edit:hover { background: var(--verde-light); }
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 200; align-items: center; justify-content: center; padding: 1rem; }
+.modal-overlay.open { display: flex; }
+.modal { background: white; border-radius: 16px; padding: 1.5rem; width: min(520px, 100%); max-height: 90vh; overflow-y: auto; box-shadow: 0 8px 32px rgba(0,0,0,0.15); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; }
+.modal-title { font-size: 16px; font-weight: 700; }
+.btn-close { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--testo-muted); }
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 11px; font-weight: 600; color: var(--testo-muted); margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.4px; }
+.field input, .field select, .field textarea { width: 100%; padding: 8px 10px; border: 1.5px solid var(--bordo); border-radius: 8px; font-size: 14px; font-family: inherit; }
+.field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--verde); }
+.field textarea { resize: vertical; min-height: 60px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.grid5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+.section-label { font-size: 11px; font-weight: 700; color: var(--verde); text-transform: uppercase; letter-spacing: 0.5px; margin: 14px 0 8px; border-bottom: 1px solid var(--verde-light); padding-bottom: 4px; }
+.btn-save { width: 100%; padding: 12px; background: var(--verde); color: white; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px; }
+.save-status { font-size: 13px; text-align: center; margin-top: 10px; min-height: 20px; }
+.save-ok { color: var(--verde); }
+.save-err { color: var(--rosso); }
+/* MESSAGGI */
+.turno-selector { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+.turno-btn { padding: 7px 13px; border: 1.5px solid var(--bordo); border-radius: 20px; font-size: 13px; background: white; cursor: pointer; }
+.turno-btn.active { background: var(--verde); color: white; border-color: var(--verde); }
+.lingua-bar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+.lingua-btn { padding: 5px 10px; border: 1px solid var(--bordo); border-radius: 20px; font-size: 12px; background: white; cursor: pointer; }
+.lingua-btn.active { background: var(--verde-light); border-color: var(--verde); color: var(--verde); font-weight: 600; }
+.msg-card { background: white; border-radius: var(--radius); padding: 1rem; box-shadow: var(--shadow); margin-bottom: 10px; }
+.msg-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.msg-text { background: var(--grigio); border-radius: 8px; padding: 10px 14px; font-size: 13px; line-height: 1.7; margin-bottom: 10px; }
+.msg-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-wa { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: #25d366; color: white; border: none; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; }
+.btn-sms { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: var(--blu); color: white; border: none; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; }
+.btn-tel { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; background: var(--arancio); color: white; border: none; border-radius: 20px; font-size: 13px; font-weight: 600; text-decoration: none; }
+/* TURNI */
+.turno-row-click { display: flex; align-items: center; justify-content: space-between; padding: 12px; border-radius: 8px; cursor: pointer; border: 1.5px solid var(--bordo); margin-bottom: 8px; background: white; transition: all 0.15s; }
+.turno-row-click:hover { border-color: var(--verde); background: var(--verde-light); }
+.turno-nome { font-size: 14px; font-weight: 600; }
+.turno-data { font-size: 12px; color: var(--testo-muted); }
+.turno-count { font-size: 14px; font-weight: 700; color: var(--verde); background: var(--verde-light); padding: 3px 12px; border-radius: 20px; }
+/* DETTAGLIO TURNO */
+.turno-detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 1rem; justify-content: space-between; }
+.btn-back { background: var(--grigio); border: 1px solid var(--bordo); border-radius: 8px; padding: 6px 12px; cursor: pointer; font-size: 13px; }
+.presence-row { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--grigio); }
+.presence-row:last-child { border-bottom: none; }
+.presence-check { width: 24px; height: 24px; accent-color: var(--verde); cursor: pointer; flex-shrink: 0; margin-top: 8px; }
+.presence-info { flex: 1; }
+.presence-name { font-size: 14px; font-weight: 600; }
+.presence-meta { font-size: 12px; color: var(--testo-muted); }
+.presence-note { margin-top: 6px; display: flex; gap: 6px; align-items: flex-start; }
+.presence-note textarea { flex: 1; padding: 5px 8px; border: 1px solid var(--bordo); border-radius: 6px; font-size: 12px; font-family: inherit; resize: vertical; min-height: 36px; }
+.btn-save-note { padding: 5px 10px; background: var(--verde); color: white; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; white-space: nowrap; }
+.orario-group { margin-bottom: 1rem; }
+.orario-header { font-size: 12px; font-weight: 700; color: var(--testo-muted); text-transform: uppercase; letter-spacing: 0.5px; padding: 6px 0; border-bottom: 1px solid var(--bordo); margin-bottom: 4px; }
+.empty { text-align: center; padding: 2rem; color: var(--testo-muted); font-size: 14px; }
+@media print {
+    header, .nav-tabs, .turno-detail-header { display: none !important; }
+    body { background: white; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo"><img src="data:image/png;base64,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" style="height:44px;width:44px;object-fit:contain;background:white;border-radius:50%;padding:4px"> Anagrafica Casetta Solidale</div>
+  <div id="user-info" style="display:none">
+    <span id="user-name" style="font-size:13px;font-weight:600;color:#ffffff;background:rgba(255,255,255,0.15);padding:4px 10px;border-radius:20px"></span>
+    <button id="btn-logout" onclick="logout()">Esci</button>
+  </div>
+</header>
+
+<div id="login-screen">
+  <div class="login-card">
+    <span class="leaf">🌿</span>
+    <h1>Casetta Solidale</h1>
+    <p>Gestione anagrafica e turni di distribuzione pacchi alimentari</p>
+    <button id="btn-google" onclick="loginGoogle()">
+      <svg viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      Accedi con Google
+    </button>
+    <p style="font-size:11px;color:var(--testo-muted);margin-top:1.5rem;">I dati non vengono salvati su server esterni. Accesso riservato ai volontari autorizzati.</p>
+  </div>
+</div>
+
+<div id="app-screen" style="display:none">
+  <div class="container">
+    <nav class="nav-tabs">
+      <button class="nav-tab active" onclick="showTab('cerca',this)">🔍 Cerca</button>
+      <button class="nav-tab" onclick="showTab('messaggi',this)">💬 Messaggi</button>
+      <button class="nav-tab" onclick="showTab('turni',this)">📋 Turni</button>
+    </nav>
+
+    <div id="tab-cerca" class="section active">
+      <div style="display:flex;gap:8px;margin-bottom:1rem;align-items:center">
+        <div class="search-wrap" style="flex:1;margin-bottom:0">
+          <span class="search-icon">🔍</span>
+          <input type="search" id="search-input" placeholder="Cerca per codice (es. 001) o nome..." oninput="cerca(this.value)" autocomplete="off">
+        </div>
+        <button onclick="apriNuovoUtente()" style="background:var(--verde);color:white;border:none;border-radius:var(--radius);padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Nuovo utente</button>
+      </div>
+      <div class="card" id="search-card" style="display:none">
+        <div id="search-results"></div>
+      </div>
+    </div>
+
+    <div id="tab-messaggi" class="section">
+      <div class="card">
+        <div class="card-title">Seleziona turno</div>
+        <div class="turno-selector" id="turno-buttons"></div>
+        <div class="card-title" style="margin-top:1rem">Lingua messaggio</div>
+        <div class="lingua-bar" id="lingua-bar"></div>
+      </div>
+      <div id="messaggi-list"></div>
+    </div>
+
+    <div id="tab-turni" class="section">
+      <div id="turni-list-view">
+        <div class="card" style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;margin-bottom:8px">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--testo-muted);text-transform:uppercase;letter-spacing:0.5px">Turni a partire da</div>
+            <div id="data-partenza-display" style="font-size:16px;font-weight:700;color:var(--verde)">—</div>
+          </div>
+          <button onclick="modificaDataPartenza()" style="background:none;border:1px solid var(--bordo);border-radius:8px;padding:6px 10px;cursor:pointer;font-size:16px" title="Modifica data">✏️</button>
+        </div>
+        <div id="data-partenza-edit" style="display:none" class="card">
+          <div class="field" style="margin:0">
+            <label>Nuova data di partenza (es. 25/05/2026)</label>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <input type="text" id="data-partenza-input" placeholder="gg/mm/aaaa" style="flex:1;padding:8px 10px;border:1.5px solid var(--bordo);border-radius:8px;font-size:14px">
+              <button onclick="salvaDataPartenza()" style="background:var(--verde);color:white;border:none;border-radius:8px;padding:8px 16px;font-weight:600;cursor:pointer">Salva</button>
+              <button onclick="document.getElementById('data-partenza-edit').style.display='none'" style="background:var(--grigio);border:1px solid var(--bordo);border-radius:8px;padding:8px 12px;cursor:pointer">✕</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Turni del mese — clicca per aprire</div>
+          <div id="turni-list"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Stampa tutti i turni di un numero</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="stampaTuttiTurni('1')" style="background:var(--verde);color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 1</button>
+            <button onclick="stampaTuttiTurni('2')" style="background:#1565c0;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 2</button>
+            <button onclick="stampaTuttiTurni('3')" style="background:#7b1fa2;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 3</button>
+            <button onclick="stampaTuttiTurni('4')" style="background:#e67e22;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Turno 4</button>
+            <button onclick="stampaTuttiTurni('D')" style="background:#c0392b;color:white;border:none;border-radius:var(--radius);padding:9px 16px;font-size:13px;font-weight:600;cursor:pointer">🖨️ Domicilio</button>
+          </div>
+        </div>
+      </div>
+      <div id="turno-detail-view" style="display:none">
+        <div class="card">
+          <div class="turno-detail-header">
+            <div style="display:flex;align-items:center;gap:8px">
+              <button class="btn-back" onclick="tornaATurni()">← Turni</button>
+              <div>
+                <div id="detail-titolo" style="font-size:16px;font-weight:700"></div>
+                <div id="detail-data" style="font-size:13px;color:var(--testo-muted)"></div>
+              </div>
+            </div>
+            <button class="btn-back" onclick="stampaTurno()" style="background:#1565c0;color:white;border-color:#1565c0;font-weight:600">🖨️ Stampa</button>
+          </div>
+          <div id="detail-persone"></div>
+          <div style="margin-top:1.5rem;padding-top:1rem;border-top:1px solid var(--bordo);text-align:right">
+            <button id="btn-chiudi-turno" onclick="chiudiTurno()" style="background:#c0392b;color:white;border:none;border-radius:var(--radius);padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer">🔒 Chiudi turno</button>
+            <p style="font-size:11px;color:var(--testo-muted);margin-top:6px">Tutti gli utenti non spuntati verranno segnati come assenti.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MODIFICA -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Modifica utente</span>
+      <button class="btn-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="section-label">Dati anagrafici</div>
+    <div class="field"><label>Nome e Cognome</label><input type="text" id="edit-nome"></div>
+    <div class="grid2">
+      <div class="field"><label>Telefono</label><input type="text" id="edit-tel"></div>
+      <div class="field"><label>Contatto</label>
+        <select id="edit-nowa">
+          <option value="">WhatsApp</option>
+          <option value="SMS">SMS</option>
+          <option value="CHIAMA">Chiama</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Attivo</label>
+        <select id="edit-attivo"><option value="sì">Sì</option><option value="no">No</option></select>
+      </div>
+      <div class="field"><label>Autocert</label>
+        <select id="edit-autocert"><option value="si">Sì</option><option value="manca">Manca</option></select>
+      </div>
+    </div>
+    <div class="section-label">Turno</div>
+    <div class="grid2">
+      <div class="field"><label>Turno</label>
+        <select id="edit-turno">
+          <option value="">-- nessuno --</option>
+          <option>MER 1</option><option>GIO 1</option><option>VEN 1</option><option>SAB 1</option>
+          <option>MER 2</option><option>GIO 2</option><option>VEN 2</option><option>SAB 2</option>
+          <option>MER 3</option><option>GIO 3</option><option>VEN 3</option><option>SAB 3</option>
+          <option>MER 4</option><option>GIO 4</option><option>VEN 4</option><option>SAB 4</option>
+          <option>D</option>
+        </select>
+      </div>
+      <div class="field"><label>Orario</label><input type="text" id="edit-orario" placeholder="es. 10:30"></div>
+    </div>
+    <div class="section-label">Nucleo familiare</div>
+    <div class="grid5">
+      <div class="field"><label>Tot.</label><input type="text" id="edit-totn" style="text-align:center"></div>
+      <div class="field"><label>Adulti</label><input type="text" id="edit-ad" style="text-align:center"></div>
+      <div class="field"><label>Minori</label><input type="text" id="edit-min" style="text-align:center"></div>
+      <div class="field"><label>Olio</label><input type="text" id="edit-ol" style="text-align:center"></div>
+      <div class="field"><label>Ass.</label><input type="text" id="edit-ass" style="text-align:center"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label>Pannoloni</label><input type="text" id="edit-pan"></div>
+      <div class="field"><label>Banco</label><input type="text" id="edit-banco"></div>
+    </div>
+    <div class="section-label">Note e situazione</div>
+    <div class="field"><label>Situazione banco/autocert</label><textarea id="edit-sitbanco" style="min-height:50px"></textarea></div>
+    <div class="field"><label>Esigenze particolari</label><textarea id="edit-esigenze"></textarea></div>
+    <div class="field"><label>Note</label><textarea id="edit-note"></textarea></div>
+    <button class="btn-save" id="btn-save" onclick="salva()">Salva modifiche</button>
+    <div class="save-status" id="save-status"></div>
+  </div>
+</div>
+
+<script>
+var CLIENT_ID = '386750291125-rmir3e9f1rtjp67aq1g8pk0ulfqktmhv.apps.googleusercontent.com';
+var SPREADSHEET_ID = '1iezEaB4EIagFTEsIl_-i9jlOSH7RE_CkyNOksTWM2B0';
+var SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/drive.readonly';
+
+var tokenClient, accessToken = null;
+var anagrafica = [], giorniTurni = {}, presenze = {};
+var editIdx = -1, turnoSelezionato = '', linguaSelezionata = 'it', turnoAperto = '';
+
+var TURNI_NOMI = {
+  'MER 1':'Mercoledi 1 turno','GIO 1':'Giovedi 1 turno','VEN 1':'Venerdi 1 turno','SAB 1':'Sabato 1 turno',
+  'MER 2':'Mercoledi 2 turno','GIO 2':'Giovedi 2 turno','VEN 2':'Venerdi 2 turno','SAB 2':'Sabato 2 turno',
+  'MER 3':'Mercoledi 3 turno','GIO 3':'Giovedi 3 turno','VEN 3':'Venerdi 3 turno','SAB 3':'Sabato 3 turno',
+  'MER 4':'Mercoledi 4 turno','GIO 4':'Giovedi 4 turno','VEN 4':'Venerdi 4 turno','SAB 4':'Sabato 4 turno',
+  'D':'Consegna a domicilio'
 };
+var ORDINE_TURNI = ['MER 1','GIO 1','VEN 1','SAB 1','MER 2','GIO 2','VEN 2','SAB 2','MER 3','GIO 3','VEN 3','SAB 3','MER 4','GIO 4','VEN 4','SAB 4','D'];
+
+var LINGUE = [
+  {code:'it', label:'🇮🇹 Italiano'},
+  {code:'en', label:'🇬🇧 Inglese'},
+  {code:'fr', label:'🇫🇷 Francese'},
+  {code:'de', label:'🇩🇪 Tedesco'},
+  {code:'es', label:'🇪🇸 Spagnolo'},
+  {code:'uk', label:'🇺🇦 Ucraino'},
+  {code:'ro', label:'🇷🇴 Rumeno'},
+  {code:'pt', label:'🇧🇷 Portoghese'},
+  {code:'ar', label:'🇸🇦 Arabo'},
+  {code:'ur', label:'🇵🇰 Urdu'},
+  {code:'hi', label:'🇮🇳 Hindi'},
+  {code:'bn', label:'🇧🇩 Bengalese'},
+  {code:'tl', label:'🇵🇭 Filippino'},
+  {code:'pl', label:'🇵🇱 Polacco'},
+  {code:'sw', label:'🇰🇪 Swahili'}
+];
+
+var MSGS = {
+  it: { normal: function(n,g,o){ return 'Ciao, il tuo appuntamento per ritirare il pacco è '+g+' alle '+o+'. Ti aspettiamo! Se non puoi passare avvisaci :)'; }, dom: function(n,g){ return 'Ciao, ti informiamo che il tuo pacco verrà consegnato a domicilio '+g+'. Ti contatteremo per comunicarti l\'orario esatto. Per qualunque cosa scrivici.'; } },
+  en: { normal: function(n,g,o){ return 'Hello, your appointment to collect your food parcel is on '+g+' at '+o+'. We look forward to seeing you! Feel free to write to us for anything.'; }, dom: function(n,g){ return 'Hello, we would like to inform you that your food parcel will be delivered to your home on '+g+'. We will contact you to let you know the exact time. Feel free to write to us for anything.'; } },
+  fr: { normal: function(n,g,o){ return 'Bonjour, votre rendez-vous pour récupérer le colis est le '+g+' à '+o+'. On vous attend! Pour tout renseignement, écrivez-nous.'; }, dom: function(n,g){ return 'Bonjour, nous vous informons que votre colis sera livré à domicile le '+g+'. Nous vous contacterons pour vous communiquer l\'heure exacte.'; } },
+  de: { normal: function(n,g,o){ return 'Hallo, Ihr Termin zur Abholung des Pakets ist am '+g+' um '+o+' Uhr. Wir freuen uns auf Sie! Bei Fragen schreiben Sie uns gerne.'; }, dom: function(n,g){ return 'Hallo, wir möchten Sie informieren, dass Ihr Paket am '+g+' nach Hause geliefert wird. Wir werden Sie kontaktieren, um Ihnen die genaue Uhrzeit mitzuteilen.'; } },
+  es: { normal: function(n,g,o){ return 'Hola, tu cita para recoger el paquete es el '+g+' a las '+o+'. Te esperamos! Para cualquier cosa escribenos.'; }, dom: function(n,g){ return 'Hola, te informamos que tu paquete será entregado a domicilio el '+g+'. Nos pondremos en contacto contigo para comunicarte la hora exacta.'; } },
+  uk: { normal: function(n,g,o){ return 'Привіт, ваш запис для отримання пакунка — '+g+' о '+o+'. Чекаємо на вас! З будь-яких питань пишіть нам.'; }, dom: function(n,g){ return 'Привіт, повідомляємо, що ваш пакунок буде доставлено додому '+g+'. Ми зв\'яжемося з вами, щоб повідомити точний час.'; } },
+  ro: { normal: function(n,g,o){ return 'Buna, programarea ta pentru a ridica pachetul este '+g+' la ora '+o+'. Te asteptam! Pentru orice intrebare scrie-ne.'; }, dom: function(n,g){ return 'Buna, te informam ca pachetul tau va fi livrat la domiciliu '+g+'. Te vom contacta pentru a-ti comunica ora exacta.'; } },
+  pt: { normal: function(n,g,o){ return 'Olá, a sua consulta para levantar o pacote é '+g+' às '+o+'. Estamos à sua espera! Para qualquer coisa escreva-nos.'; }, dom: function(n,g){ return 'Olá, informamos que o seu pacote será entregue em casa no dia '+g+'. Entraremos em contacto para informar o horário exato.'; } },
+  ar: { normal: function(n,g,o){ return 'مرحباً، موعدك لاستلام الحقيبة هو '+g+' الساعة '+o+'. بانتظارك! لأي استفسار تواصل معنا.'; }, dom: function(n,g){ return 'مرحباً، نعلمك أن حقيبتك ستُسلَّم إلى منزلك '+g+'. سنتواصل معك لإبلاغك بالوقت المحدد.'; } },
+  ur: { normal: function(n,g,o){ return 'ہیلو، پیکیج لینے کا آپ کا وقت '+g+' کو '+o+' بجے ہے۔ ہم آپ کا انتظار کر رہے ہیں! کسی بھی چیز کے لیے ہمیں لکھیں۔'; }, dom: function(n,g){ return 'ہیلو، ہم آپ کو بتانا چاہتے ہیں کہ آپ کا پیکیج '+g+' کو گھر پہنچایا جائے گا۔ ہم آپ سے وقت بتانے کے لیے رابطہ کریں گے۔'; } },
+  hi: { normal: function(n,g,o){ return 'नमस्ते, पैकेज लेने की आपकी नियुक्ति '+g+' को '+o+' बजे है। हम आपका इंतजार करेंगे! किसी भी चीज के लिए हमें लिखें।'; }, dom: function(n,g){ return 'नमस्ते, हम आपको सूचित करना चाहते हैं कि आपका पैकेज '+g+' को घर पर डिलीवर किया जाएगा।'; } },
+  bn: { normal: function(n,g,o){ return 'হ্যালো, আপনার পার্সেল নেওয়ার অ্যাপয়েন্টমেন্ট '+g+' তারিখে '+o+' সময়ে। আমরা আপনার জন্য অপেক্ষা করছি!'; }, dom: function(n,g){ return 'হ্যালো, আমরা জানাচ্ছি যে আপনার পার্সেলটি '+g+' তারিখে বাড়িতে ডেলিভারি দেওয়া হবে।'; } },
+  tl: { normal: function(n,g,o){ return 'Kumusta, ang iyong appointment para kunin ang pakete ay '+g+' ng '+o+'. Hinihintay ka namin! Para sa anumang katanungan, sumulat sa amin.'; }, dom: function(n,g){ return 'Kumusta, nais naming ipaalam na ang iyong pakete ay ihahatid sa bahay mo sa '+g+'. Makikipag-ugnayan kami sa iyo para ipaalam ang eksaktong oras.'; } },
+  pl: { normal: function(n,g,o){ return 'Czesc, Twoja wizyta po odbior paczki jest zaplanowana na '+g+' o godz. '+o+'. Czekamy na Ciebie! W razie pytan napisz do nas.'; }, dom: function(n,g){ return 'Czesc, informujemy, ze Twoja paczka zostanie dostarczona do domu '+g+'. Skontaktujemy sie z Toba, aby podac dokladna godzine.'; } },
+  sw: { normal: function(n,g,o){ return 'Habari, miadi yako ya kuchukua kifurushi ni '+g+' saa '+o+'. Tunakusubiri! Kwa chochote, tuandikia.'; }, dom: function(n,g){ return 'Habari, tunakujulisha kwamba kifurushi chako kitawasilishwa nyumbani kwako '+g+'. Tutawasiliana nawe kukuambia wakati halisi.'; } }
+};;
 
 function formatData(serial, lang) {
   if (!serial && serial !== 0) return '';
