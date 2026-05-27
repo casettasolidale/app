@@ -419,14 +419,29 @@ function loginGoogle() {
     callback: function(resp) {
       if (resp.error) { alert('Errore login: ' + resp.error); return; }
       accessToken = resp.access_token;
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + accessToken } })
-        .then(function(r){ return r.json(); }).then(function(u) {
-          document.getElementById('user-name').textContent = u.name || u.email;
-          document.getElementById('login-screen').style.display = 'none';
-          document.getElementById('app-screen').style.display = 'block';
-          document.getElementById('user-info').style.display = 'flex';
-          caricaDati();
-        });
+      // Decode name from JWT token if available, otherwise use email from token hint
+      var userName = '';
+      try {
+        // Try to get user info from id_token if present
+        if (resp.id_token) {
+          var payload = JSON.parse(atob(resp.id_token.split('.')[1]));
+          userName = payload.name || payload.email || '';
+        }
+      } catch(e) {}
+      // If no name yet, fetch from userinfo
+      if (!userName) {
+        fetch('https://www.googleapis.com/oauth2/v3/userinfo', { headers: { Authorization: 'Bearer ' + accessToken } })
+          .then(function(r){ return r.json(); })
+          .then(function(u) {
+            document.getElementById('user-name').textContent = u.name || u.email || '';
+          }).catch(function(){});
+      } else {
+        document.getElementById('user-name').textContent = userName;
+      }
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app-screen').style.display = 'block';
+      document.getElementById('user-info').style.display = 'flex';
+      caricaDati();
     }
   });
   tokenClient.requestAccessToken();
