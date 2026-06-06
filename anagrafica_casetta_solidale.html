@@ -136,6 +136,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
       <button class="nav-tab active" onclick="showTab('cerca',this)">🔍 Cerca</button>
       <button class="nav-tab" onclick="showTab('messaggi',this)">💬 Messaggi</button>
       <button class="nav-tab" onclick="showTab('turni',this)">📋 Turni</button>
+      <button class="nav-tab" onclick="showTab('statistiche',this)">📊 Statistiche</button>
     </nav>
 
     <div id="tab-cerca" class="section active">
@@ -157,6 +158,20 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
         <div class="turno-selector" id="turno-buttons"></div>
         <div class="card-title" style="margin-top:1rem">Lingua messaggio</div>
         <div class="lingua-bar" id="lingua-bar"></div>
+      </div>
+      <div id="invio-guidato" style="display:none">
+        <div class="card" style="text-align:center;padding:1.5rem">
+          <div style="font-size:12px;color:var(--testo-muted);margin-bottom:8px" id="ig-counter"></div>
+          <div style="font-size:18px;font-weight:700;margin-bottom:4px" id="ig-nome"></div>
+          <div style="font-size:13px;color:var(--testo-muted);margin-bottom:16px" id="ig-tel"></div>
+          <div style="background:var(--grigio);border-radius:8px;padding:12px 16px;font-size:13px;line-height:1.7;margin-bottom:16px;text-align:left" id="ig-testo"></div>
+          <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap" id="ig-btn"></div>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:12px">
+            <button onclick="igPrev()" style="background:var(--grigio);border:1px solid var(--bordo);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px">← Indietro</button>
+            <button onclick="igNext()" id="ig-next-btn" style="background:var(--verde);color:white;border:none;border-radius:8px;padding:8px 20px;cursor:pointer;font-size:13px;font-weight:600">Prossim* →</button>
+            <button onclick="chiudiInvioGuidato()" style="background:var(--grigio);border:1px solid var(--bordo);border-radius:8px;padding:8px 16px;cursor:pointer;font-size:13px">✕ Esci</button>
+          </div>
+        </div>
       </div>
       <div id="messaggi-list"></div>
     </div>
@@ -209,6 +224,16 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
             <button id="btn-chiudi-turno" onclick="chiudiTurno()" style="background:#c0392b;color:white;border:none;border-radius:var(--radius);padding:12px 24px;font-size:14px;font-weight:600;cursor:pointer">🔒 Chiudi turno</button>
             <p style="font-size:11px;color:var(--testo-muted);margin-top:6px">Tutti gli utenti non spuntati verranno segnati come assenti.</p>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <div id="tab-statistiche" class="section">
+      <div class="card" id="stats-card">
+        <div class="card-title">Riepilogo beneficiari attivi</div>
+        <div id="stats-content" style="display:flex;flex-direction:column;gap:16px">
+          <p style="color:var(--testo-muted);font-size:14px">Caricamento...</p>
         </div>
       </div>
     </div>
@@ -515,11 +540,52 @@ function costruisciLingue() {
   bar.innerHTML=LINGUE.map(function(l,i){return '<button class="lingua-btn'+(i===0?' active':'')+'" onclick="setLingua(\''+l.code+'\',this)">'+l.label+'</button>';}).join('');
 }
 
+function mostraStatistiche() {
+  var attivi = anagrafica.filter(isAttivo);
+  var totNuclei = attivi.length;
+  var totPersone = 0, totAdulti = 0, totMinori = 0;
+  attivi.forEach(function(p) {
+    totPersone += parseInt(p.totN) || 0;
+    totAdulti  += parseInt(p.ad)   || 0;
+    totMinori  += parseInt(p.min)  || 0;
+  });
+
+  function statBox(label, valore, colore, sublabel) {
+    return '<div style="background:white;border-radius:12px;padding:20px 24px;border:1.5px solid var(--bordo);display:flex;align-items:center;gap:20px">' +
+      '<div style="width:56px;height:56px;border-radius:50%;background:'+colore+'22;display:flex;align-items:center;justify-content:center;flex-shrink:0">' +
+        '<span style="font-size:24px;font-weight:900;color:'+colore+'">'+valore+'</span>' +
+      '</div>' +
+      '<div>' +
+        '<div style="font-size:18px;font-weight:700;color:var(--testo)">'+label+'</div>' +
+        (sublabel ? '<div style="font-size:12px;color:var(--testo-muted);margin-top:2px">'+sublabel+'</div>' : '') +
+      '</div>' +
+    '</div>';
+  }
+
+  var html =
+    statBox('Nuclei familiari attivi', totNuclei, '#2d6a4f', 'persone registrate con turno attivo') +
+    statBox('Persone totali', totPersone, '#1565c0', 'somma dei componenti di ogni nucleo') +
+    statBox('Adulti', totAdulti, '#e67e22', '') +
+    statBox('Minori', totMinori, '#7c3aed', '');
+
+  // Nota se i totali non tornano
+  var diff = totPersone - (totAdulti + totMinori);
+  if (diff !== 0 && totPersone > 0) {
+    html += '<div style="background:#fff3cd;border-radius:8px;padding:10px 14px;font-size:12px;color:#856404;border-left:3px solid #d97706">' +
+      '⚠️ '+Math.abs(diff)+' person'+(Math.abs(diff)===1?'a':'e')+' '+(diff>0?'non classificat':'in più rispetto al totale')+
+      (diff>0?' (adulti o minori non specificati)':'')+
+    '</div>';
+  }
+
+  document.getElementById('stats-content').innerHTML = html;
+}
+
 function showTab(id,btn) {
   document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.nav-tab').forEach(function(b){b.classList.remove('active');});
   document.getElementById('tab-'+id).classList.add('active');
   btn.classList.add('active');
+  if (id === 'statistiche') mostraStatistiche();
 }
 
 function initials(nome){return nome.split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();}
@@ -688,7 +754,12 @@ function mostraMessaggi() {
   var data=raw?formatData(raw,linguaSelezionata):'';
   var msgs=MSGS[linguaSelezionata]||MSGS['it'];
   var dom=turnoSelezionato==='D';
-  el.innerHTML=persone.map(function(p){
+  // Pulsante "Invia tutti"
+  var btnTutti = '<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">';
+  btnTutti += '<button onclick="avviaInvioGuidato()" style="background:var(--verde);color:white;border:none;border-radius:20px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">▶ Invia tutti uno per uno</button>';
+  btnTutti += '</div>';
+  el.innerHTML = btnTutti;
+  el.innerHTML += persone.map(function(p){
     var testo=dom?msgs.dom(p.nome,data):msgs.normal(p.nome,data,p.orario);
     var tel=p.telefono.replace(/\s/g,'').replace(/^00/,'+');
     // Se inizia con 3 e ha 9-10 cifre (numero italiano senza prefisso) aggiungi +39
@@ -703,6 +774,54 @@ function mostraMessaggi() {
       '<div style="font-size:12px;color:var(--testo-muted)">'+(p.telefono==='no tel'?'📵 no tel':p.telefono)+'</div></div>'+tipoTag(p.noWa,p.telefono)+'</div>'+
       '<div class="msg-text">'+testo+'</div><div class="msg-actions">'+btnHtml+'</div></div>';
   }).join('');
+}
+
+var _igPersone = [], _igIdx = 0, _igData = '', _igMsgs = null, _igDom = false;
+
+function avviaInvioGuidato() {
+  if (!turnoSelezionato) return;
+  _igPersone = anagrafica.filter(function(p){ return p.turno===turnoSelezionato && isAttivo(p) && p.telefono && p.telefono !== 'no tel'; });
+  if (!_igPersone.length) { alert('Nessuna persona con numero disponibile in questo turno.'); return; }
+  _igIdx = 0;
+  var raw = giorniTurni[turnoSelezionato] || '';
+  _igData = raw ? formatData(raw, linguaSelezionata) : '';
+  _igMsgs = MSGS[linguaSelezionata] || MSGS['it'];
+  _igDom = turnoSelezionato === 'D';
+  document.getElementById('invio-guidato').style.display = 'block';
+  document.getElementById('messaggi-list').style.display = 'none';
+  mostraIgPersona();
+}
+
+function mostraIgPersona() {
+  var p = _igPersone[_igIdx];
+  var testo = _igDom ? _igMsgs.dom(p.nome, _igData) : _igMsgs.normal(p.nome, _igData, p.orario);
+  var tel = p.telefono.replace(/\s/g,'').replace(/^00/,'+');
+  if (/^3\d{8,9}$/.test(tel)) tel = '+39' + tel;
+  var tipo = p.noWa==='SMS'?'sms':(p.noWa==='CHIAMA'||p.noWa==='NO'?'call':'wa');
+  var btnHtml = '';
+  if (tipo==='wa') btnHtml = '<a class="btn-wa" href="https://wa.me/'+tel.replace('+','')+'?text='+encodeURIComponent(testo)+'" target="_blank">📱 Apri WhatsApp</a>';
+  else if (tipo==='sms') btnHtml = '<a class="btn-sms" href="sms:'+tel+'?body='+encodeURIComponent(testo)+'">💬 Apri SMS</a>';
+  else btnHtml = '<a class="btn-tel" href="tel:'+tel+'">📞 Chiama</a>';
+  document.getElementById('ig-counter').textContent = (_igIdx+1) + ' di ' + _igPersone.length;
+  document.getElementById('ig-nome').textContent = p.nome + ' [' + p.codice + ']';
+  document.getElementById('ig-tel').textContent = p.telefono + (p.turno ? ' · ' + p.turno : '') + (p.orario ? ' ' + p.orario : '');
+  document.getElementById('ig-testo').textContent = testo;
+  document.getElementById('ig-btn').innerHTML = btnHtml;
+  document.getElementById('ig-next-btn').textContent = _igIdx < _igPersone.length-1 ? 'Prossim* →' : '✓ Fatto';
+}
+
+function igNext() {
+  if (_igIdx < _igPersone.length-1) { _igIdx++; mostraIgPersona(); }
+  else chiudiInvioGuidato();
+}
+
+function igPrev() {
+  if (_igIdx > 0) { _igIdx--; mostraIgPersona(); }
+}
+
+function chiudiInvioGuidato() {
+  document.getElementById('invio-guidato').style.display = 'none';
+  document.getElementById('messaggi-list').style.display = 'block';
 }
 
 function mostraTurni() {
