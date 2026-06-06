@@ -159,6 +159,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
         <div class="card-title" style="margin-top:1rem">Lingua messaggio</div>
         <div class="lingua-bar" id="lingua-bar"></div>
       </div>
+      <div id="apri-tutti-bar" style="display:none;gap:8px;margin-bottom:12px;flex-wrap:wrap"></div>
       <div id="messaggi-list"></div>
     </div>
 
@@ -409,7 +410,7 @@ function formatData(serial, lang) {
   return String(serial);
 }
 
-function isAttivo(p) { return p.attivo===''||p.attivo==='sì'||p.attivo==='si'||p.attivo==='s'; }
+function isAttivo(p) { return p.attivo==='sì'||p.attivo==='si'||p.attivo==='s'; }
 
 function loginGoogle() {
   if (typeof google === 'undefined') { alert('Libreria Google non ancora caricata. Riprova tra qualche secondo.'); return; }
@@ -531,9 +532,11 @@ function mostraStatistiche() {
   var totNuclei = attivi.length;
   var totPersone = 0, totAdulti = 0, totMinori = 0;
   attivi.forEach(function(p) {
-    totPersone += parseInt(p.totN) || 0;
-    totAdulti  += parseInt(p.ad)   || 0;
-    totMinori  += parseInt(p.min)  || 0;
+    var ad  = parseInt(p.ad)  || 0;
+    var min = parseInt(p.min) || 0;
+    totAdulti  += ad;
+    totMinori  += min;
+    totPersone += ad + min;
   });
 
   function statBox(label, valore, colore, sublabel) {
@@ -740,6 +743,16 @@ function mostraMessaggi() {
   var data=raw?formatData(raw,linguaSelezionata):'';
   var msgs=MSGS[linguaSelezionata]||MSGS['it'];
   var dom=turnoSelezionato==='D';
+  // Barra "Apri tutti"
+  var bar = document.getElementById('apri-tutti-bar');
+  var haWa = persone.some(function(p){ return p.telefono && p.telefono!=='no tel' && p.noWa!=='SMS' && p.noWa!=='CHIAMA' && p.noWa!=='NO'; });
+  var haSms = persone.some(function(p){ return p.telefono && p.telefono!=='no tel' && p.noWa==='SMS'; });
+  var barHtml = '';
+  if (haWa) barHtml += '<button onclick="apriTuttiWa()" style="background:#25d366;color:white;border:none;border-radius:20px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">📱 Apri tutti su WhatsApp</button>';
+  if (haSms) barHtml += '<button onclick="apriTuttiSms()" style="background:var(--blu);color:white;border:none;border-radius:20px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer">💬 Apri tutti su SMS</button>';
+  bar.innerHTML = barHtml;
+  bar.style.display = barHtml ? 'flex' : 'none';
+
   el.innerHTML=persone.map(function(p){
     var testo=dom?msgs.dom(p.nome,data):msgs.normal(p.nome,data,p.orario);
     var tel=p.telefono.replace(/\s/g,'').replace(/^00/,'+');
@@ -755,6 +768,47 @@ function mostraMessaggi() {
       '<div style="font-size:12px;color:var(--testo-muted)">'+(p.telefono==='no tel'?'📵 no tel':p.telefono)+'</div></div>'+tipoTag(p.noWa,p.telefono)+'</div>'+
       '<div class="msg-text">'+testo+'</div><div class="msg-actions">'+btnHtml+'</div></div>';
   }).join('');
+}
+
+function _buildLinks(tipo) {
+  if (!turnoSelezionato) return [];
+  var persone = anagrafica.filter(function(p){ return p.turno===turnoSelezionato && isAttivo(p) && p.telefono && p.telefono!=='no tel'; });
+  var raw = giorniTurni[turnoSelezionato] || '';
+  var data = raw ? formatData(raw, linguaSelezionata) : '';
+  var msgs = MSGS[linguaSelezionata] || MSGS['it'];
+  var dom = turnoSelezionato === 'D';
+  var links = [];
+  persone.forEach(function(p) {
+    var noWa = p.noWa || '';
+    var isWa = noWa !== 'SMS' && noWa !== 'CHIAMA' && noWa !== 'NO';
+    var isSms = noWa === 'SMS';
+    if (tipo === 'wa' && !isWa) return;
+    if (tipo === 'sms' && !isSms) return;
+    var testo = dom ? msgs.dom(p.nome, data) : msgs.normal(p.nome, data, p.orario);
+    var tel = p.telefono.replace(/\s/g,'').replace(/^00/,'+');
+    if (/^3\d{8,9}$/.test(tel)) tel = '+39' + tel;
+    if (tipo === 'wa') links.push('https://wa.me/' + tel.replace('+','') + '?text=' + encodeURIComponent(testo));
+    else links.push('sms:' + tel + '?body=' + encodeURIComponent(testo));
+  });
+  return links;
+}
+
+function apriTuttiWa() {
+  var links = _buildLinks('wa');
+  if (!links.length) { alert('Nessun numero WhatsApp in questo turno.'); return; }
+  if (!confirm('Verranno aperte ' + links.length + ' chat WhatsApp.\n\nSe il browser blocca i popup:\n1. Tocca il lucchetto 🔒 nella barra indirizzi\n2. Vai su Impostazioni sito\n3. Abilita Popup e reindirizzamenti\n4. Riprova\n\nProcedere?')) return;
+  links.forEach(function(url, i) {
+    setTimeout(function() { window.open(url, '_blank'); }, i * 400);
+  });
+}
+
+function apriTuttiSms() {
+  var links = _buildLinks('sms');
+  if (!links.length) { alert('Nessun numero SMS in questo turno.'); return; }
+  if (!confirm('Verranno aperti ' + links.length + ' SMS.\n\nSe il browser blocca i popup:\n1. Tocca il lucchetto 🔒 nella barra indirizzi\n2. Vai su Impostazioni sito\n3. Abilita Popup e reindirizzamenti\n4. Riprova\n\nProcedere?')) return;
+  links.forEach(function(url, i) {
+    setTimeout(function() { window.open(url, '_blank'); }, i * 400);
+  });
 }
 
 function mostraTurni() {
