@@ -691,6 +691,8 @@ function mostraMessaggi() {
   el.innerHTML=persone.map(function(p){
     var testo=dom?msgs.dom(p.nome,data):msgs.normal(p.nome,data,p.orario);
     var tel=p.telefono.replace(/\s/g,'').replace(/^00/,'+');
+    // Se inizia con 3 e ha 9-10 cifre (numero italiano senza prefisso) aggiungi +39
+    if (/^3\d{8,9}$/.test(tel)) tel = '+39' + tel;
     var tipo=p.noWa==='SMS'?'sms':(p.noWa==='CHIAMA'||p.noWa==='NO'?'call':'wa');
     var btnHtml=!p.telefono||p.telefono==='no tel'?'<span style="color:#aaa;font-size:13px">📵 Nessun numero</span>':
       tipo==='wa'?'<a class="btn-wa" href="https://wa.me/'+tel.replace('+','')+'?text='+encodeURIComponent(testo)+'" target="_blank">📱 WhatsApp</a>':
