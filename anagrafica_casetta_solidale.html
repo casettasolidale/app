@@ -1132,7 +1132,7 @@ function htmlRiga(p) {
 
   var ritiroHtml='';
   if (altrove) {
-    ritiroHtml='<div class="ritiro-stato">Venuta nel turno '+rit.effettivo+' del '+(rit.data||'?')+'</div>';
+    ritiroHtml='<div class="ritiro-stato">Ha ritirato nel turno '+rit.effettivo+' del '+(rit.data||'?')+'</div>';
   } else if (fatto && !inCorrezione[cod]) {
     var dati=[];
     if(haExtra(p,'ol')) dati.push('olio '+(rit.ol==='SI'?'✓':'✗'));
@@ -1147,7 +1147,7 @@ function htmlRiga(p) {
     var chk=function(tipo,etichetta,qta){
       return '<label class="spunta"><input type="checkbox"'+(b[tipo]?' checked':'')+dis+' onchange="spunta(\''+cod+'\',\''+tipo+'\',this.checked)"> '+etichetta+(qta?' <b style="color:'+(parseInt(qta)>1?'#e67e22':'#333')+'">'+qta+'</b>':'')+'</label>';
     };
-    var spunte=chk('venuta',turno==='D'?'Pacco consegnato':'Venuta / pacco');
+    var spunte=chk('venuta',turno==='D'?'Pacco consegnato':'Pacco ritirato');
     if(haExtra(p,'ol')) spunte+=chk('ol','Olio',p.ol);
     if(haExtra(p,'ass')) spunte+=chk('ass','Assorbenti',p.ass);
     if(haExtra(p,'pan')) spunte+=chk('pan','Pannoloni',p.pan);
@@ -1158,7 +1158,7 @@ function htmlRiga(p) {
       '<div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
         '<button class="btn-conferma" onclick="confermaRitiro(\''+cod+'\')"'+btnDis+'>'+etich+'</button>'+
         (inCorrezione[cod]&&!inCorso[cod]?'<button class="btn-correggi" onclick="annullaCorrezione(\''+cod+'\')">Annulla</button>':'')+
-        (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli "venuta" per annullare il ritiro</span>':'')+
+        (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli la spunta del pacco per annullare il ritiro</span>':'')+
       '</div>'+
       (errori[cod]?'<div class="ritiro-errore">⚠️ Non salvato: '+errori[cod]+'. Controlla la connessione e premi "Riprova".</div>':'');
   }

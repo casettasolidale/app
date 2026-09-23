@@ -103,6 +103,9 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   riscrive la stessa riga (la data del ritiro resta quella originale). Il pulsante note si chiama
   "Registra nota" (scrive in Anagrafica!H come prima). Non si registra il nome del volontario
   (deciso: non serve).
+  Nelle scritte dell'app **non usare la parola "venuta"** (si presta a battute): la spunta si chiama
+  "Pacco ritirato" ("Pacco consegnato" per il domicilio), nel turno di origine si scrive
+  "Ha ritirato nel turno … del …".
 - 2026-09 — Chiusura del giro: cambiando la data "Turni a partire da" l'app, dopo conferma, segna
   esito NO per le persone attive **con un turno** (domicilio D compreso) senza ritiro nel giro che si
   chiude, poi scrive B2 e mostra presenti/assenti. Ripetibile senza doppioni.
