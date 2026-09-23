@@ -463,14 +463,16 @@ function preparaTokenClient() {
   return true;
 }
 
-function chiediToken() {
+function chiediToken(scegliAccount) {
   if (!preparaTokenClient()) { alert('Libreria Google non ancora caricata. Riprova tra qualche secondo.'); return; }
-  var opz = {prompt: ''};
-  if (utenteEmail) opz.login_hint = utenteEmail;
+  var opz = {prompt: scegliAccount ? 'select_account' : ''};
+  if (utenteEmail && !scegliAccount) opz.login_hint = utenteEmail;
   tokenClient.requestAccessToken(opz);
 }
 
-function loginGoogle() { chiediToken(); }
+// Dalla schermata di accesso entra sempre una persona "nuova": si dimentica chi c'era prima
+// e Google fa scegliere l'account (niente suggerimento con l'email del volontario precedente).
+function loginGoogle() { utenteEmail=''; utenteNome=''; chiediToken(true); }
 
 function tokenRicevuto(resp) {
   if (resp.error) { if (appAperta) mostraBarraAccesso('Errore di accesso: '+resp.error+'. Tocca "Continua" per riprovare.'); else alert('Errore login: ' + resp.error); return; }
@@ -679,13 +681,16 @@ function mostraStatistiche() {
 // Ricorda (solo in questa scheda del browser) dove si era: scheda, turno aperto, turno e lingua
 // dei messaggi. Dopo un refresh l'app riapre la stessa vista.
 var VISTA_KEY='casetta_vista', vistaRipristinata=false;
+function chiSonoIo() { return utenteEmail||utenteNome||''; }
 function ricordaVista(campo,valore) {
-  try { var v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); v[campo]=valore; sessionStorage.setItem(VISTA_KEY,JSON.stringify(v)); } catch(e) {}
+  try { var v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); v[campo]=valore; v.utente=chiSonoIo(); sessionStorage.setItem(VISTA_KEY,JSON.stringify(v)); } catch(e) {}
 }
 function ripristinaVista() {
   if (vistaRipristinata) return;
   vistaRipristinata=true;
   var v={}; try { v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); } catch(e) {}
+  // la vista si riapre solo per la stessa persona; per un altro volontario si parte da Cerca
+  if (!v.utente || v.utente!==chiSonoIo()) { try { sessionStorage.removeItem(VISTA_KEY); } catch(e) {} return; }
   var clicca=function(selettore,valore){
     var bs=document.querySelectorAll(selettore);
     for(var i=0;i<bs.length;i++){ if((bs[i].getAttribute('onclick')||'').indexOf("'"+valore+"'")>=0){ bs[i].click(); return true; } }
