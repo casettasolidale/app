@@ -81,7 +81,12 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   (un tocco, `requestAccessToken({prompt:''})` con `login_hint` se l'email è nota) e la chiamata
   viene ripetuta. Non usare più `fetch` diretto verso sheets.googleapis.com.
 - 2026-09 — Dopo un refresh l'app riapre la stessa vista (scheda, turno aperto, turno e lingua dei
-  Messaggi), salvata in `sessionStorage` (chiave `casetta_vista`). "Esci" la cancella e riporta a Cerca.
+  Messaggi), salvata in `sessionStorage` (chiave `casetta_vista`) insieme a chi l'ha aperta: si
+  riapre solo per la stessa persona, altrimenti si parte da Cerca. "Esci" la cancella e riporta a Cerca.
+- 2026-09 — Telefoni condivisi: dalla schermata di accesso Google mostra sempre la scelta dell'account
+  (`prompt:'select_account'`, senza `login_hint`). La barra "Continua" (rinnovo a sessione in corso)
+  usa invece `prompt:''` con `login_hint` della persona collegata. Se un volontario non preme "Esci"
+  e l'accesso è ancora valido (meno di un'ora), l'app non può accorgersi che la persona è cambiata.
 
 ## Lavori in corso (compiti concordati)
 
