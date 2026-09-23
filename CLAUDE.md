@@ -80,6 +80,8 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   `apiFetch`: se il token è scaduto o Google risponde 401, compare la barra gialla "Continua"
   (un tocco, `requestAccessToken({prompt:''})` con `login_hint` se l'email è nota) e la chiamata
   viene ripetuta. Non usare più `fetch` diretto verso sheets.googleapis.com.
+- 2026-09 — Dopo un refresh l'app riapre la stessa vista (scheda, turno aperto, turno e lingua dei
+  Messaggi), salvata in `sessionStorage` (chiave `casetta_vista`). "Esci" la cancella e riporta a Cerca.
 
 ## Lavori in corso (compiti concordati)
 
