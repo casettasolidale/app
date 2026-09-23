@@ -88,6 +88,14 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   (`prompt:'select_account'`, senza `login_hint`). La barra "Continua" (rinnovo a sessione in corso)
   usa invece `prompt:''` con `login_hint` della persona collegata.
 
+- 2026-09 — Orari (compito 6): configurazione `FASCE_ORARIE` e `PASSO_MINUTI` in cima allo script
+  (MER/GIO 18:00–19:50, VEN/SAB 10:00–12:40, D nessun orario). Nel modulo l'orario è un menu con i
+  soli orari validi del turno e quante persone attive ci sono già; scegliendo il turno si preseleziona
+  l'orario con meno persone (a parità il più presto). Nessun limite di persone per orario. Un orario
+  salvato non valido (o mancante, per turni con orari) si mostra con un avviso e va scelto un orario
+  valido prima di salvare; il foglio non viene mai corretto in automatico. Orari come "18.00" o
+  "18:00:00" sono considerati validi (stesso orario). In Statistiche: elenco "Orari da sistemare".
+
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.
@@ -97,4 +105,4 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
    nuova struttura del foglio "presenze" (una riga per ritiro), vecchi dati in "presenze_archivio",
    assenti registrati alla chiusura del giro.
 5. Persone che vengono una tantum in un turno diverso dal proprio (solo per il giro in corso).
-6. Orari fissi ogni 10 minuti con orario suggerito; elenco "Orari da sistemare" nelle Statistiche.
+6. (fatto, vedi Decisioni) Orari fissi ogni 10 minuti con orario suggerito; elenco "Orari da sistemare" nelle Statistiche.
