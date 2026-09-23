@@ -80,6 +80,13 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   `apiFetch`: se il token è scaduto o Google risponde 401, compare la barra gialla "Continua"
   (un tocco, `requestAccessToken({prompt:''})` con `login_hint` se l'email è nota) e la chiamata
   viene ripetuta. Non usare più `fetch` diretto verso sheets.googleapis.com.
+- 2026-09 — Dopo un refresh l'app riapre la stessa vista (scheda, turno aperto, turno e lingua dei
+  Messaggi), salvata in `sessionStorage` (chiave `casetta_vista`). Ogni accesso nuovo dalla
+  schermata "Accedi con Google" (e "Esci") la cancella: si parte da Cerca. Deciso: se il telefono
+  resta collegato e passa da un volontario all'altro, va bene che resti sull'ultima scheda.
+- 2026-09 — Telefoni condivisi: dalla schermata di accesso Google mostra sempre la scelta dell'account
+  (`prompt:'select_account'`, senza `login_hint`). La barra "Continua" (rinnovo a sessione in corso)
+  usa invece `prompt:''` con `login_hint` della persona collegata.
 
 ## Lavori in corso (compiti concordati)
 

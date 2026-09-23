@@ -451,14 +451,20 @@ function preparaTokenClient() {
   return true;
 }
 
-function chiediToken() {
+function chiediToken(scegliAccount) {
   if (!preparaTokenClient()) { alert('Libreria Google non ancora caricata. Riprova tra qualche secondo.'); return; }
-  var opz = {prompt: ''};
-  if (utenteEmail) opz.login_hint = utenteEmail;
+  var opz = {prompt: scegliAccount ? 'select_account' : ''};
+  if (utenteEmail && !scegliAccount) opz.login_hint = utenteEmail;
   tokenClient.requestAccessToken(opz);
 }
 
-function loginGoogle() { chiediToken(); }
+// Dalla schermata di accesso è sempre un accesso nuovo: si riparte da Cerca e Google fa
+// scegliere l'account (niente suggerimento con l'email del volontario precedente).
+function loginGoogle() {
+  utenteEmail=''; utenteNome='';
+  try { sessionStorage.removeItem(VISTA_KEY); } catch(e) {}
+  chiediToken(true);
+}
 
 function tokenRicevuto(resp) {
   if (resp.error) { if (appAperta) mostraBarraAccesso('Errore di accesso: '+resp.error+'. Tocca "Continua" per riprovare.'); else alert('Errore login: ' + resp.error); return; }
@@ -530,7 +536,13 @@ function logout() {
   var t = accessToken;
   accessToken=null; tokenScadenza=0; utenteEmail=''; utenteNome=''; appAperta=false;
   anagrafica=[]; giorniTurni={}; presenze={}; attesaToken=[];
-  cancellaSessione(); clearTimeout(timerScadenza); nascondiBarraAccesso();
+  cancellaSessione(); clearTimeout(timerScadenza);
+  try { sessionStorage.removeItem(VISTA_KEY); } catch(e) {}
+  vistaRipristinata=false; turnoSelezionato=''; linguaSelezionata='it';
+  document.getElementById('turni-list-view').style.display='block';
+  document.getElementById('turno-detail-view').style.display='none';
+  showTab('cerca', document.querySelector('.nav-tab'));
+  try { sessionStorage.removeItem(VISTA_KEY); } catch(e) {} nascondiBarraAccesso();
   if (t && typeof google !== 'undefined' && google.accounts) google.accounts.oauth2.revoke(t, function(){});
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('app-screen').style.display='none';
@@ -572,6 +584,7 @@ function caricaDati() {
     costruisciLingue();
     aggiornaTurniButtons();
     mostraTurni();
+    ripristinaVista();
   }).catch(function(e){alert('Errore nel caricare i dati: '+e.message);});
 }
 
@@ -665,7 +678,31 @@ function mostraStatistiche() {
   document.getElementById('stats-content').innerHTML = html;
 }
 
+// ===== VISTA =====
+// Ricorda (solo in questa scheda del browser) dove si era: scheda, turno aperto, turno e lingua
+// dei messaggi. Dopo un refresh con l'accesso ancora valido l'app riapre la stessa vista;
+// un accesso nuovo (loginGoogle) la cancella e si parte da Cerca.
+var VISTA_KEY='casetta_vista', vistaRipristinata=false;
+function ricordaVista(campo,valore) {
+  try { var v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); v[campo]=valore; sessionStorage.setItem(VISTA_KEY,JSON.stringify(v)); } catch(e) {}
+}
+function ripristinaVista() {
+  if (vistaRipristinata) return;
+  vistaRipristinata=true;
+  var v={}; try { v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); } catch(e) {}
+  var clicca=function(selettore,valore){
+    var bs=document.querySelectorAll(selettore);
+    for(var i=0;i<bs.length;i++){ if((bs[i].getAttribute('onclick')||'').indexOf("'"+valore+"'")>=0){ bs[i].click(); return true; } }
+    return false;
+  };
+  if (v.lingua) clicca('.lingua-btn', v.lingua);
+  if (v.msgTurno) clicca('.turno-btn', v.msgTurno);
+  if (v.tab) clicca('.nav-tab', v.tab);
+  if (v.tab==='turni' && v.turno && ORDINE_TURNI.indexOf(v.turno)>=0) apriTurno(v.turno);
+}
+
 function showTab(id,btn) {
+  ricordaVista('tab',id);
   document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.nav-tab').forEach(function(b){b.classList.remove('active');});
   document.getElementById('tab-'+id).classList.add('active');
@@ -826,9 +863,9 @@ function aggiornaTurniButtons() {
   }).join('');
 }
 
-function selezionaTurno(t,btn){turnoSelezionato=t;document.querySelectorAll('.turno-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');mostraMessaggi();}
+function selezionaTurno(t,btn){turnoSelezionato=t;ricordaVista('msgTurno',t);document.querySelectorAll('.turno-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');mostraMessaggi();}
 
-function setLingua(l,btn){linguaSelezionata=l;document.querySelectorAll('.lingua-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');mostraMessaggi();}
+function setLingua(l,btn){linguaSelezionata=l;ricordaVista('lingua',l);document.querySelectorAll('.lingua-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');mostraMessaggi();}
 
 function mostraMessaggi() {
   var el=document.getElementById('messaggi-list');
@@ -871,6 +908,7 @@ function mostraTurni() {
 
 function apriTurno(turno) {
   turnoAperto=turno;
+  ricordaVista('turno',turno);
   document.getElementById('turni-list-view').style.display='none';
   document.getElementById('turno-detail-view').style.display='block';
   document.getElementById('detail-titolo').textContent=TURNI_NOMI[turno]||turno;
@@ -918,6 +956,7 @@ function apriTurno(turno) {
 }
 
 function tornaATurni() {
+  ricordaVista('turno','');
   document.getElementById('turni-list-view').style.display='block';
   document.getElementById('turno-detail-view').style.display='none';
   document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active');});
