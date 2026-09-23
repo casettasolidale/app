@@ -500,6 +500,7 @@ function tokenRicevuto(resp) {
 function entraNellApp() {
   appAperta = true;
   document.getElementById('user-name').textContent = utenteNome;
+  mostraVistaSubito();
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
   document.getElementById('user-info').style.display = 'flex';
@@ -650,6 +651,7 @@ function costruisciLingue() {
 }
 
 function mostraStatistiche() {
+  if (!anagrafica.length) { document.getElementById('stats-content').innerHTML='<p style="color:var(--testo-muted);font-size:14px">Caricamento...</p>'; return; }
   var attivi = anagrafica.filter(isAttivo);
   var totNuclei = attivi.length;
   var totPersone = 0, totAdulti = 0, totMinori = 0;
@@ -710,6 +712,22 @@ var VISTA_KEY='casetta_vista', vistaRipristinata=false;
 function ricordaVista(campo,valore) {
   try { var v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); v[campo]=valore; sessionStorage.setItem(VISTA_KEY,JSON.stringify(v)); } catch(e) {}
 }
+// Dopo una ricarica mostra subito la scheda dov'eri (senza passare da Cerca), con "Caricamento…"
+// finché i dati non arrivano; poi ripristinaVista completa il resto.
+function mostraVistaSubito() {
+  var v={}; try { v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); } catch(e) {}
+  if (!v.tab) return;
+  var btn=document.querySelector('.nav-tab[onclick*="\''+v.tab+'\'"]');
+  if (!btn) return;
+  showTab(v.tab, btn);
+  if (v.tab==='turni' && v.turno && ORDINE_TURNI.indexOf(v.turno)>=0) {
+    document.getElementById('turni-list-view').style.display='none';
+    document.getElementById('turno-detail-view').style.display='block';
+    document.getElementById('detail-titolo').textContent=TURNI_NOMI[v.turno]||v.turno;
+    document.getElementById('detail-persone').innerHTML='<p class="empty">Caricamento…</p>';
+  }
+}
+
 function ripristinaVista() {
   if (vistaRipristinata) return;
   vistaRipristinata=true;
