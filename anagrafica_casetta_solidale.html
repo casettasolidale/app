@@ -105,6 +105,9 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .data-partenza-val { font-size: 16px; font-weight: 700; color: var(--testo); }
 #barra-accesso { position: fixed; top: 0; left: 0; right: 0; z-index: 300; box-shadow: 0 2px 8px rgba(0,0,0,0.15); background: #fff3cd; color: #856404; border-bottom: 2px solid #d97706; padding: 10px 1rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; }
 #barra-accesso button { background: var(--verde); color: white; border: none; border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
+.tag-ospite { background: #fef3e2; color: var(--arancio); }
+.ospite-riga { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--bordo); border-radius: 8px; margin-bottom: 6px; font-size: 13px; background: white; }
+.ospite-msg { font-size: 13px; color: var(--testo-muted); padding: 6px 2px; }
 .riga-fatta { background: #e8f5e9; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
 .riga-altrove { background: #f1f1f1; color: #888; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
 .riga-altrove .presence-name, .riga-altrove .presence-meta { color: #888; }
@@ -227,6 +230,11 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
               <button class="btn-back" onclick="stampaTurno()" style="background:#1565c0;color:white;border-color:#1565c0;font-weight:600">🖨️ Stampa</button>
             </div>
           </div>
+          <div class="search-wrap" style="margin-bottom:6px">
+            <span class="search-icon">➕</span>
+            <input type="search" id="ospite-cerca" placeholder="Aggiungi una persona di un altro turno (nome o codice)" oninput="cercaOspite(this.value)" autocomplete="off">
+          </div>
+          <div id="ospite-risultati" style="margin-bottom:10px"></div>
           <div id="avviso-struttura" class="ritiro-errore" style="display:none;margin-bottom:10px">⚠️ Il foglio "presenze" ha ancora la vecchia struttura: non si possono registrare ritiri finché non viene preparato il nuovo foglio.</div>
           <div id="detail-persone"></div>
         </div>
@@ -866,15 +874,19 @@ function aggiornaTurniButtons() {
   }).join('');
 }
 
-function selezionaTurno(t,btn){turnoSelezionato=t;ricordaVista('msgTurno',t);document.querySelectorAll('.turno-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');mostraMessaggi();}
+function selezionaTurno(t,btn){turnoSelezionato=t;ricordaVista('msgTurno',t);leggiRitiri().then(function(){if(turnoSelezionato===t)mostraMessaggi();}).catch(function(){});document.querySelectorAll('.turno-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');mostraMessaggi();}
 
 function setLingua(l,btn){linguaSelezionata=l;ricordaVista('lingua',l);document.querySelectorAll('.lingua-btn').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');mostraMessaggi();}
 
 function mostraMessaggi() {
   var el=document.getElementById('messaggi-list');
   if(!turnoSelezionato){el.innerHTML='';return;}
-  var persone=anagrafica.filter(function(p){return p.turno===turnoSelezionato&&isAttivo(p);});
-  if(!persone.length){el.innerHTML='<div class="empty">Nessuna persona in questo turno</div>';return;}
+  var tutte=anagrafica.filter(function(p){return p.turno===turnoSelezionato&&isAttivo(p);});
+  // chi ha già ritirato in questo giro (nel suo turno o in un altro) non riceve il messaggio
+  var persone=tutte.filter(function(p){var r=ritiroNelGiro(p.codice);return !(r&&r.esito==='SI');});
+  var escluse=tutte.length-persone.length;
+  var avvisoEscluse=escluse?'<div class="empty" style="padding:8px">'+escluse+(escluse===1?' persona esclusa perché ha':' persone escluse perché hanno')+' già ritirato in questo giro</div>':'';
+  if(!persone.length){el.innerHTML=avvisoEscluse||'<div class="empty">Nessuna persona in questo turno</div>';return;}
   var raw=giorniTurni[turnoSelezionato]||'';
   var data=raw?formatData(raw,linguaSelezionata):'';
   var msgs=MSGS[linguaSelezionata]||MSGS['it'];
@@ -893,7 +905,7 @@ function mostraMessaggi() {
       '<div style="flex:1"><div style="font-weight:600;font-size:14px">'+p.nome+' <span class="tag tag-codice">'+p.codice+'</span></div>'+
       '<div style="font-size:12px;color:var(--testo-muted)">'+(p.telefono==='no tel'?'📵 no tel':p.telefono)+'</div></div>'+tipoTag(p.noWa,p.telefono)+'<button class="btn-edit" onclick="apriModifica('+anagrafica.indexOf(p)+')">✏️</button></div>'+
       '<div class="msg-text">'+testo+'</div><div class="msg-actions">'+btnHtml+'</div></div>';
-  }).join('');
+  }).join('')+avvisoEscluse;
 }
 
 function mostraTurni() {
@@ -959,6 +971,78 @@ function ritiroNelGiro(codice, giro) {
 function haExtra(p,tipo) { return parseInt(p[tipo])>0; }
 function trovaPersona(codice) { for(var i=0;i<anagrafica.length;i++){if(anagrafica[i].codice===codice)return anagrafica[i];} return null; }
 
+// ===== PERSONE DA ALTRI TURNI (solo per il giro in corso) =====
+// Una persona di un altro turno si può aggiungere al turno aperto se in questo giro non ha ancora
+// ritirato. Il suo turno in Anagrafica non cambia: dopo la conferma il ritiro ha turno effettivo =
+// turno aperto. Finché non è confermata, l'aggiunta è ricordata solo su questo telefono.
+var OSPITI_KEY='casetta_ospiti';
+function leggiOspiti() {
+  var o={}; try { o=JSON.parse(sessionStorage.getItem(OSPITI_KEY)||'{}'); } catch(e) {}
+  if (normData(o.giro||'')!==normData(inizioGiro)) o={giro:inizioGiro, turni:{}};
+  if (!o.turni) o.turni={};
+  return o;
+}
+function ospitiDelTurno(turno) { return leggiOspiti().turni[turno]||[]; }
+function salvaOspiti(turno, codici) {
+  var o=leggiOspiti(); o.giro=inizioGiro; o.turni[turno]=codici;
+  try { sessionStorage.setItem(OSPITI_KEY, JSON.stringify(o)); } catch(e) {}
+}
+
+// Persone di altri turni da mostrare nel turno aperto: aggiunte a mano o già venute qui in questo giro
+function personeDaAltriTurni(turno) {
+  var codici={};
+  ospitiDelTurno(turno).forEach(function(c){ codici[c]=true; });
+  ritiri.forEach(function(r){ if(r.esito==='SI'&&r.effettivo===turno&&normData(r.giro)===normData(inizioGiro)) codici[r.codice]=true; });
+  return Object.keys(codici).map(trovaPersona).filter(function(p){ return p&&p.turno!==turno; });
+}
+
+function cercaOspite(q) {
+  var el=document.getElementById('ospite-risultati'), turno=turnoAperto;
+  q=q.trim().toLowerCase();
+  if(!q){ el.innerHTML=''; return; }
+  var giaQui={}; personeDaAltriTurni(turno).forEach(function(p){ giaQui[p.codice]=true; });
+  var trovati=anagrafica.filter(function(p){
+    return isAttivo(p)&&p.nome&&p.turno!==turno&&!giaQui[p.codice]&&(p.codice.indexOf(q)>=0||p.nome.toLowerCase().indexOf(q)>=0);
+  }).slice(0,8);
+  if(!trovati.length){ el.innerHTML='<div class="ospite-msg">Nessuna persona trovata</div>'; return; }
+  el.innerHTML=trovati.map(function(p){
+    return '<div class="ospite-riga" id="ospite-'+p.codice+'">'+
+      '<span><b>'+p.nome+'</b> <span class="tag tag-codice">'+p.codice+'</span> <span class="tag tag-turno">'+(p.turno||'senza turno')+'</span></span>'+
+      '<button class="btn-correggi" onclick="aggiungiOspite(\''+p.codice+'\')">+ Aggiungi</button>'+
+    '</div>';
+  }).join('');
+}
+
+function aggiungiOspite(codice) {
+  var turno=turnoAperto, riga=document.getElementById('ospite-'+codice), p=trovaPersona(codice);
+  if(!p||!turno) return;
+  if(riga) riga.innerHTML='<span>Controllo in corso…</span>';
+  // rileggo il foglio: magari è già venuta in questo giro (nel suo turno o altrove)
+  leggiRitiri().then(function(){
+    var rit=ritiroNelGiro(codice);
+    if(rit&&rit.esito==='SI'){
+      if(riga) riga.innerHTML='<span><b>'+p.nome+'</b>: già venuta in questo giro (turno '+(rit.effettivo||rit.previsto)+' del '+(rit.data||'?')+'). Non è stata aggiunta.</span>';
+      return;
+    }
+    var codici=ospitiDelTurno(turno);
+    if(codici.indexOf(codice)<0) codici.push(codice);
+    salvaOspiti(turno, codici);
+    document.getElementById('ospite-cerca').value='';
+    document.getElementById('ospite-risultati').innerHTML='';
+    disegnaTurno();
+    var el=document.getElementById('riga-'+codice); if(el&&el.scrollIntoView) el.scrollIntoView({block:'center'});
+  }).catch(function(e){
+    if(riga) riga.innerHTML='<span class="ritiro-errore">⚠️ Non riesco a controllare il foglio: '+e.message+'. Riprova.</span>';
+  });
+}
+
+function togliOspite(codice) {
+  var turno=turnoAperto;
+  salvaOspiti(turno, ospitiDelTurno(turno).filter(function(c){ return c!==codice; }));
+  delete bozze[codice]; delete errori[codice];
+  disegnaTurno();
+}
+
 function apriTurno(turno) {
   turnoAperto=turno;
   ricordaVista('turno',turno);
@@ -966,6 +1050,8 @@ function apriTurno(turno) {
   document.getElementById('turno-detail-view').style.display='block';
   document.getElementById('detail-titolo').textContent=TURNI_NOMI[turno]||turno;
   document.getElementById('detail-data').textContent=getDataTurno(turno)||'';
+  document.getElementById('ospite-cerca').value='';
+  document.getElementById('ospite-risultati').innerHTML='';
   disegnaTurno();
   aggiornaTurnoDalFoglio();
 }
@@ -993,6 +1079,11 @@ function disegnaTurno() {
     html+='<div class="orario-header">🕐 '+ora+'</div>';
     orariMap[ora].forEach(function(p){ html+='<div id="riga-'+p.codice+'">'+htmlRiga(p)+'</div>'; });
   });
+  var ospiti=personeDaAltriTurni(turno);
+  if(ospiti.length){
+    html='<div class="orario-header">👥 Da altri turni (solo per questo giro)</div>'+
+      ospiti.map(function(p){ return '<div id="riga-'+p.codice+'">'+htmlRiga(p)+'</div>'; }).join('')+html;
+  }
   document.getElementById('detail-persone').innerHTML=html||'<p class="empty">Nessuna persona</p>';
   Object.keys(noteScritte).forEach(function(id){ var t=document.getElementById(id); if(t) t.value=noteScritte[id]; });
 }
@@ -1006,7 +1097,7 @@ function ridisegnaRiga(codice) {
 }
 
 function htmlRiga(p) {
-  var turno=turnoAperto, cod=p.codice, rit=ritiroNelGiro(cod);
+  var turno=turnoAperto, cod=p.codice, rit=ritiroNelGiro(cod), ospite=p.turno!==turno;
   var ex=buildPersonExtras(p), addrHtml='';
   if(turno==='D'&&p.indirizzo){var addr=p.indirizzo+(p.indirizzo.toLowerCase().indexOf('roma')===-1?', Roma':'');addrHtml='<br><a href="https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr)+'" target="_blank" style="color:var(--verde);font-weight:500">📍 '+p.indirizzo+'</a>';}
   else if(p.indirizzo){addrHtml='<br>📍 '+p.indirizzo;}
@@ -1043,6 +1134,7 @@ function htmlRiga(p) {
       '<div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
         '<button class="btn-conferma" onclick="confermaRitiro(\''+cod+'\')"'+btnDis+'>'+etich+'</button>'+
         (inCorrezione[cod]&&!inCorso[cod]?'<button class="btn-correggi" onclick="annullaCorrezione(\''+cod+'\')">Annulla</button>':'')+
+        (ospite&&!rit&&!inCorso[cod]?'<button class="btn-correggi" onclick="togliOspite(\''+cod+'\')">Togli da questo turno</button>':'')+
         (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli "venuta" per annullare il ritiro</span>':'')+
       '</div>'+
       (errori[cod]?'<div class="ritiro-errore">⚠️ Non salvato: '+errori[cod]+'. Controlla la connessione e premi "Riprova".</div>':'');
@@ -1051,7 +1143,7 @@ function htmlRiga(p) {
   return '<div class="'+classe+'">'+
     '<div class="presence-info">'+
       '<div class="presence-name">'+
-        '<span>'+p.nome+' <span class="tag tag-codice">'+cod+'</span></span>'+
+        '<span>'+p.nome+' <span class="tag tag-codice">'+cod+'</span>'+(ospite?' <span class="tag tag-ospite">suo turno: '+(p.turno||'nessuno')+'</span>':'')+'</span>'+
         '<button class="btn-edit" onclick="apriModifica('+anagrafica.indexOf(p)+')">✏️</button>'+
       '</div>'+
       '<div class="presence-meta">'+(p.telefono==='no tel'?'📵 no tel':'📞 '+p.telefono)+' '+tipoTag(p.noWa,p.telefono)+addrHtml+

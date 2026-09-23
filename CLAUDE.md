@@ -105,6 +105,15 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   esito NO per le persone attive **con un turno** (domicilio D compreso) senza ritiro nel giro che si
   chiude, poi scrive B2 e mostra presenti/assenti. Ripetibile senza doppioni.
 
+- 2026-09 — Persone da altri turni (compito 5): nel turno aperto c'è la ricerca "Aggiungi una persona
+  di un altro turno". Prima di aggiungerla l'app rilegge il foglio: se ha già un SI nel giro mostra
+  "già venuta in questo giro (turno, data)" e non la aggiunge. Le persone aggiunte ma non ancora
+  confermate sono ricordate solo sul telefono (`sessionStorage`, chiave `casetta_ospiti`, per giro);
+  una volta confermate compaiono nel turno perché il ritiro ha turno effettivo = quel turno.
+  Nel turno di origine la persona resta visibile in grigio ("Venuta nel turno X del …"), senza
+  conferma ma con "Registra nota". Nei Messaggi chi ha già un SI nel giro non compare.
+  L'Anagrafica non cambia mai.
+
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.
@@ -113,5 +122,5 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
 4. (fatto, vedi Decisioni) Nuovo modo di registrare i ritiri ("Conferma ritiro" per persona, niente più "Chiudi turno"),
    nuova struttura del foglio "presenze" (una riga per ritiro), vecchi dati in "presenze_archivio",
    assenti registrati alla chiusura del giro.
-5. Persone che vengono una tantum in un turno diverso dal proprio (solo per il giro in corso).
+5. (fatto, vedi Decisioni) Persone che vengono una tantum in un turno diverso dal proprio (solo per il giro in corso).
 6. Orari fissi ogni 10 minuti con orario suggerito; elenco "Orari da sistemare" nelle Statistiche.
