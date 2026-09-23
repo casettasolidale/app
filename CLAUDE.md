@@ -103,6 +103,9 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   riscrive la stessa riga (la data del ritiro resta quella originale). Il pulsante note si chiama
   "Registra nota" (scrive in Anagrafica!H come prima). Non si registra il nome del volontario
   (deciso: non serve).
+  Nelle scritte dell'app **non usare la parola "venuta"** (si presta a battute): la spunta si chiama
+  "Pacco ritirato" ("Pacco consegnato" per il domicilio), nel turno di origine si scrive
+  "Ha ritirato nel turno … del …".
 - 2026-09 — Chiusura del giro: cambiando la data "Turni a partire da" l'app, dopo conferma, segna
   esito NO per le persone attive **con un turno** (domicilio D compreso) senza ritiro nel giro che si
   chiude, poi scrive B2 e mostra presenti/assenti. Ripetibile senza doppioni.
@@ -116,10 +119,10 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
 
 - 2026-09 — Persone da altri turni (compito 5): nel turno aperto c'è la ricerca "Aggiungi una persona
   di un altro turno". Prima di aggiungerla l'app rilegge il foglio: se ha già un SI nel giro mostra
-  "già venuta in questo giro (turno, data)" e non la aggiunge. Le persone aggiunte ma non ancora
+  "ha già ritirato in questo giro (turno, data)" e non la aggiunge. Le persone aggiunte ma non ancora
   confermate sono ricordate solo sul telefono (`sessionStorage`, chiave `casetta_ospiti`, per giro);
   una volta confermate compaiono nel turno perché il ritiro ha turno effettivo = quel turno.
-  Nel turno di origine la persona resta visibile in grigio ("Venuta nel turno X del …"), senza
+  Nel turno di origine la persona resta visibile in grigio ("Ha ritirato nel turno X del …"), senza
   conferma ma con "Registra nota". Nei Messaggi chi ha già un SI nel giro non compare.
   L'Anagrafica non cambia mai.
 

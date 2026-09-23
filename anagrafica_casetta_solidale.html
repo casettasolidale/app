@@ -1132,11 +1132,11 @@ function aggiungiOspite(codice) {
   var turno=turnoAperto, riga=document.getElementById('ospite-'+codice), p=trovaPersona(codice);
   if(!p||!turno) return;
   if(riga) riga.innerHTML='<span>Controllo in corso…</span>';
-  // rileggo il foglio: magari è già venuta in questo giro (nel suo turno o altrove)
+  // rileggo il foglio: magari ha già ritirato in questo giro (nel suo turno o altrove)
   leggiRitiri().then(function(){
     var rit=ritiroNelGiro(codice);
     if(rit&&rit.esito==='SI'){
-      if(riga) riga.innerHTML='<span><b>'+p.nome+'</b>: già venuta in questo giro (turno '+(rit.effettivo||rit.previsto)+' del '+(rit.data||'?')+'). Non è stata aggiunta.</span>';
+      if(riga) riga.innerHTML='<span><b>'+p.nome+'</b>: ha già ritirato in questo giro (turno '+(rit.effettivo||rit.previsto)+' del '+(rit.data||'?')+'). Non è stata aggiunta.</span>';
       return;
     }
     var codici=ospitiDelTurno(turno);
@@ -1223,7 +1223,7 @@ function htmlRiga(p) {
 
   var ritiroHtml='';
   if (altrove) {
-    ritiroHtml='<div class="ritiro-stato">Venuta nel turno '+rit.effettivo+' del '+(rit.data||'?')+'</div>';
+    ritiroHtml='<div class="ritiro-stato">Ha ritirato nel turno '+rit.effettivo+' del '+(rit.data||'?')+'</div>';
   } else if (fatto && !inCorrezione[cod]) {
     var dati=[];
     if(haExtra(p,'ol')) dati.push('olio '+(rit.ol==='SI'?'✓':'✗'));
@@ -1238,7 +1238,7 @@ function htmlRiga(p) {
     var chk=function(tipo,etichetta,qta){
       return '<label class="spunta"><input type="checkbox"'+(b[tipo]?' checked':'')+dis+' onchange="spunta(\''+cod+'\',\''+tipo+'\',this.checked)"> '+etichetta+(qta?' <b style="color:'+(parseInt(qta)>1?'#e67e22':'#333')+'">'+qta+'</b>':'')+'</label>';
     };
-    var spunte=chk('venuta',turno==='D'?'Pacco consegnato':'Venuta / pacco');
+    var spunte=chk('venuta',turno==='D'?'Pacco consegnato':'Pacco ritirato');
     if(haExtra(p,'ol')) spunte+=chk('ol','Olio',p.ol);
     if(haExtra(p,'ass')) spunte+=chk('ass','Assorbenti',p.ass);
     if(haExtra(p,'pan')) spunte+=chk('pan','Pannoloni',p.pan);
@@ -1249,8 +1249,12 @@ function htmlRiga(p) {
       '<div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
         '<button class="btn-conferma" onclick="confermaRitiro(\''+cod+'\')"'+btnDis+'>'+etich+'</button>'+
         (inCorrezione[cod]&&!inCorso[cod]?'<button class="btn-correggi" onclick="annullaCorrezione(\''+cod+'\')">Annulla</button>':'')+
+<<<<<<< HEAD
         (ospite&&!rit&&!inCorso[cod]?'<button class="btn-correggi" onclick="togliOspite(\''+cod+'\')">Togli da questo turno</button>':'')+
         (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli "venuta" per annullare il ritiro</span>':'')+
+=======
+        (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli la spunta del pacco per annullare il ritiro</span>':'')+
+>>>>>>> claude/charming-hypatia-fqamxq-ritiri
       '</div>'+
       (errori[cod]?'<div class="ritiro-errore">⚠️ Non salvato: '+errori[cod]+'. Controlla la connessione e premi "Riprova".</div>':'');
   }
