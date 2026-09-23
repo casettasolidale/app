@@ -74,12 +74,18 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
 ## Decisioni prese
 
 - 2026-09 — Tolto il permesso `drive.readonly`: resta solo `spreadsheets`.
+- 2026-09 — Accesso Google: token e scadenza in `sessionStorage` (chiave `casetta_sessione`),
+  non in `localStorage`. Dopo un refresh si resta collegati; chiudendo la scheda o con "Esci"
+  l'accesso sparisce (più sicuro sui telefoni condivisi). Tutte le chiamate ai fogli passano da
+  `apiFetch`: se il token è scaduto o Google risponde 401, compare la barra gialla "Continua"
+  (un tocco, `requestAccessToken({prompt:''})` con `login_hint` se l'email è nota) e la chiamata
+  viene ripetuta. Non usare più `fetch` diretto verso sheets.googleapis.com.
 
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.
 2. Permessi e pulizia — fatto (permesso Drive tolto, copie vecchie cancellate).
-3. Restare collegati dopo un refresh e rinnovo del token scaduto con nuovo tentativo del salvataggio.
+3. Restare collegati dopo un refresh e rinnovo del token scaduto — fatto (vedi Decisioni).
 4. Nuovo modo di registrare i ritiri ("Conferma ritiro" per persona, niente più "Chiudi turno"),
    nuova struttura del foglio "presenze" (una riga per ritiro), vecchi dati in "presenze_archivio",
    assenti registrati alla chiusura del giro.

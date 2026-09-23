@@ -103,6 +103,8 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .data-partenza-box { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--verde-light); border-radius: 8px; margin-bottom: 12px; }
 .data-partenza-label { font-size: 11px; font-weight: 700; color: var(--verde); text-transform: uppercase; letter-spacing: 0.4px; }
 .data-partenza-val { font-size: 16px; font-weight: 700; color: var(--testo); }
+#barra-accesso { position: fixed; top: 0; left: 0; right: 0; z-index: 300; box-shadow: 0 2px 8px rgba(0,0,0,0.15); background: #fff3cd; color: #856404; border-bottom: 2px solid #d97706; padding: 10px 1rem; display: flex; align-items: center; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 600; }
+#barra-accesso button { background: var(--verde); color: white; border: none; border-radius: 8px; padding: 9px 18px; font-size: 14px; font-weight: 700; cursor: pointer; flex-shrink: 0; }
 </style>
 </head>
 <body>
@@ -116,6 +118,11 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
     <button id="btn-logout" onclick="logout()">Esci</button>
   </div>
 </header>
+
+<div id="barra-accesso" style="display:none">
+  <span id="barra-accesso-testo"></span>
+  <button onclick="chiediToken()">Continua</button>
+</div>
 
 <div id="login-screen">
   <div class="login-card">
@@ -411,44 +418,134 @@ function formatData(serial, lang) {
 
 function isAttivo(p) { return p.attivo==='sì'||p.attivo==='si'||p.attivo==='s'; }
 
-function loginGoogle() {
-  if (typeof google === 'undefined') { alert('Libreria Google non ancora caricata. Riprova tra qualche secondo.'); return; }
+// ===== ACCESSO GOOGLE =====
+// Il token (valido circa 1 ora) viene tenuto in sessionStorage: resta dopo un refresh della pagina,
+// ma sparisce quando si chiude la scheda del browser o si preme "Esci".
+// Tutte le chiamate ai fogli passano da apiFetch: se il token è scaduto (o Google risponde 401)
+// la chiamata aspetta che il volontario tocchi "Continua" nella barra gialla e poi viene ripetuta.
+var SESSIONE_KEY = 'casetta_sessione';
+var tokenScadenza = 0, utenteEmail = '', utenteNome = '';
+var attesaToken = [], timerScadenza = null, appAperta = false;
+
+function salvaSessione() {
+  try { sessionStorage.setItem(SESSIONE_KEY, JSON.stringify({t:accessToken,s:tokenScadenza,e:utenteEmail,n:utenteNome})); } catch(e) {}
+}
+function leggiSessione() {
+  try { var s=JSON.parse(sessionStorage.getItem(SESSIONE_KEY)||'null'); if(s){accessToken=s.t||null;tokenScadenza=s.s||0;utenteEmail=s.e||'';utenteNome=s.n||'';} } catch(e) {}
+}
+function cancellaSessione() {
+  try { sessionStorage.removeItem(SESSIONE_KEY); } catch(e) {}
+}
+function tokenValido() { return !!accessToken && Date.now() < tokenScadenza - 60000; }
+
+function preparaTokenClient() {
+  if (tokenClient) return true;
+  if (typeof google === 'undefined' || !google.accounts || !google.accounts.oauth2) return false;
   tokenClient = google.accounts.oauth2.initTokenClient({
-    client_id: CLIENT_ID, scope: SCOPES,
-    callback: function(resp) {
-      if (resp.error) { alert('Errore login: ' + resp.error); return; }
-      accessToken = resp.access_token;
-      fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{Authorization:'Bearer '+accessToken}})
-        .then(function(r){return r.json();})
-        .then(function(u){
-          document.getElementById('user-name').textContent = u.name || u.email || '';
-          document.getElementById('login-screen').style.display = 'none';
-          document.getElementById('app-screen').style.display = 'block';
-          document.getElementById('user-info').style.display = 'flex';
-          caricaDati();
-        }).catch(function(){
-          document.getElementById('login-screen').style.display = 'none';
-          document.getElementById('app-screen').style.display = 'block';
-          document.getElementById('user-info').style.display = 'flex';
-          caricaDati();
-        });
+    client_id: CLIENT_ID, scope: SCOPES, callback: tokenRicevuto,
+    error_callback: function(err) {
+      // finestra chiusa o bloccata: le operazioni in attesa restano in attesa, si può ritoccare "Continua"
+      if (appAperta) mostraBarraAccesso('Accesso non completato. Tocca "Continua" per riprovare.');
     }
   });
-  tokenClient.requestAccessToken();
+  return true;
+}
+
+function chiediToken() {
+  if (!preparaTokenClient()) { alert('Libreria Google non ancora caricata. Riprova tra qualche secondo.'); return; }
+  var opz = {prompt: ''};
+  if (utenteEmail) opz.login_hint = utenteEmail;
+  tokenClient.requestAccessToken(opz);
+}
+
+function loginGoogle() { chiediToken(); }
+
+function tokenRicevuto(resp) {
+  if (resp.error) { if (appAperta) mostraBarraAccesso('Errore di accesso: '+resp.error+'. Tocca "Continua" per riprovare.'); else alert('Errore login: ' + resp.error); return; }
+  accessToken = resp.access_token;
+  tokenScadenza = Date.now() + (parseInt(resp.expires_in,10)||3600)*1000;
+  salvaSessione();
+  programmaAvvisoScadenza();
+  nascondiBarraAccesso();
+  var inAttesa = attesaToken; attesaToken = [];
+  inAttesa.forEach(function(f){ f(); });
+  if (!appAperta) {
+    fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{Authorization:'Bearer '+accessToken}})
+      .then(function(r){ return r.ok ? r.json() : {}; })
+      .then(function(u){ utenteNome = u.name || u.email || ''; if (u.email) utenteEmail = u.email; salvaSessione(); })
+      .catch(function(){})
+      .then(entraNellApp);
+  }
+}
+
+function entraNellApp() {
+  appAperta = true;
+  document.getElementById('user-name').textContent = utenteNome;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app-screen').style.display = 'block';
+  document.getElementById('user-info').style.display = 'flex';
+  caricaDati();
+}
+
+function programmaAvvisoScadenza() {
+  clearTimeout(timerScadenza);
+  var tra = tokenScadenza - 60000 - Date.now();
+  timerScadenza = setTimeout(function(){ if (appAperta && !tokenValido()) mostraBarraAccesso(); }, Math.max(tra, 0));
+}
+
+function mostraBarraAccesso(testo) {
+  document.getElementById('barra-accesso-testo').textContent = testo ||
+    (attesaToken.length ? 'Accesso a Google scaduto: un salvataggio è in attesa. Tocca "Continua" e verrà completato.'
+                        : 'Accesso a Google scaduto. Tocca "Continua" per restare collegato.');
+  document.getElementById('barra-accesso').style.display = 'flex';
+}
+function nascondiBarraAccesso() { document.getElementById('barra-accesso').style.display = 'none'; }
+
+// Aspetta un token valido (se serve mostra la barra "Continua")
+function aspettaToken() {
+  if (tokenValido()) return Promise.resolve();
+  return new Promise(function(ok){ attesaToken.push(ok); mostraBarraAccesso(); });
+}
+
+// Come fetch, ma aggiunge il token e, se Google risponde 401, rinnova l'accesso e ripete la chiamata.
+// Ripetere è sicuro: con 401 Google non ha eseguito niente.
+function apiFetch(url, opzioni) {
+  opzioni = opzioni || {};
+  function prova() {
+    return aspettaToken().then(function(){
+      var h = {}, k;
+      for (k in (opzioni.headers||{})) h[k] = opzioni.headers[k];
+      h.Authorization = 'Bearer ' + accessToken;
+      return fetch(url, {method: opzioni.method||'GET', headers: h, body: opzioni.body});
+    });
+  }
+  return prova().then(function(r){
+    if (r.status !== 401) return r;
+    accessToken = null; tokenScadenza = 0; salvaSessione();
+    return prova();
+  });
 }
 
 function logout() {
-  google.accounts.oauth2.revoke(accessToken, function() {
-    accessToken=null; anagrafica=[]; giorniTurni={}; presenze={};
-    document.getElementById('login-screen').style.display='flex';
-    document.getElementById('app-screen').style.display='none';
-    document.getElementById('user-info').style.display='none';
-  });
+  var t = accessToken;
+  accessToken=null; tokenScadenza=0; utenteEmail=''; utenteNome=''; appAperta=false;
+  anagrafica=[]; giorniTurni={}; presenze={}; attesaToken=[];
+  cancellaSessione(); clearTimeout(timerScadenza); nascondiBarraAccesso();
+  if (t && typeof google !== 'undefined' && google.accounts) google.accounts.oauth2.revoke(t, function(){});
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('user-info').style.display='none';
 }
+
+// All'apertura: se c'è ancora un accesso valido in questa scheda, si entra senza rifare il login
+document.addEventListener('DOMContentLoaded', function() {
+  leggiSessione();
+  if (tokenValido()) { programmaAvvisoScadenza(); entraNellApp(); }
+});
 
 function fetchSheet(range) {
   var url='https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(range);
-  return fetch(url,{headers:{Authorization:'Bearer '+accessToken}}).then(function(r){
+  return apiFetch(url).then(function(r){
     if(!r.ok) return r.text().then(function(t){throw new Error('Errore '+r.status+': '+t.substring(0,100));});
     return r.json();
   });
@@ -466,8 +563,8 @@ function caricaDati() {
     if (rows1[1]&&rows1[1][1]) document.getElementById('data-partenza-display').textContent = formatDataEstesa(rows1[1][1]);
     var presValues = results[2].values||[];
     if (presValues.length===0) {
-      fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('presenze!A1:H1')+'?valueInputOption=USER_ENTERED',{
-        method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+      apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('presenze!A1:H1')+'?valueInputOption=USER_ENTERED',{
+        method:'PUT',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({values:[['codice','turno','data turno','SI/NO','note','olio','ass','pan']]})
       });
     }
@@ -710,8 +807,8 @@ function salva() {
     {range:'Anagrafica!R'+row,values:[[p.pan]]},{range:'Anagrafica!S'+row,values:[[p.banco]]},
     {range:'Anagrafica!T'+row,values:[[p.sitBanco]]}
   ];
-  fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
-    method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+  apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
+    method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({valueInputOption:'USER_ENTERED',data:updates})
   }).then(function(r){if(!r.ok)throw new Error('Errore '+r.status);
     status.innerHTML='<span class="save-ok">✓ Salvato!</span>';
@@ -847,8 +944,8 @@ function salvaNota(codice,turno) {
   var nd=document.getElementById('nota-display-'+codice);
   if(nd){nd.textContent='📝 '+notaCompleta;nd.style.display='block';}
   var btn=el.nextElementSibling; btn.textContent='...'; btn.disabled=true;
-  fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('Anagrafica!H'+p.rowNum)+'?valueInputOption=USER_ENTERED',{
-    method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+  apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('Anagrafica!H'+p.rowNum)+'?valueInputOption=USER_ENTERED',{
+    method:'PUT',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({range:'Anagrafica!H'+p.rowNum,values:[[notaCompleta]]})
   }).then(function(r){if(!r.ok)throw new Error('Errore '+r.status);btn.textContent='✓';setTimeout(function(){btn.textContent='Salva nota';btn.disabled=false;},2000);})
   .catch(function(e){alert('Errore: '+e.message);btn.textContent='Salva nota';btn.disabled=false;});
@@ -885,16 +982,16 @@ function chiudiTurno() {
   var promises=salvataggi.map(function(s){
     presenze[s.key]={presente:'NO',nota:s.nota,ol:s.ol,ass:s.ass,pan:s.pan,rowNum:s.rowNum};
     if(s.rowNum){
-      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
-        method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+      return apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
+        method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({valueInputOption:'USER_ENTERED',data:[
           {range:'presenze!C'+s.rowNum,values:[[s.dataTurno]]},{range:'presenze!D'+s.rowNum,values:[['NO']]},
           {range:'presenze!E'+s.rowNum,values:[[s.nota]]},{range:'presenze!F'+s.rowNum,values:[[s.ol]]},
           {range:'presenze!G'+s.rowNum,values:[[s.ass]]},{range:'presenze!H'+s.rowNum,values:[[s.pan]]}
         ]})});
     } else {
-      return fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:H:append?valueInputOption=USER_ENTERED',{
-        method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+      return apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:H:append?valueInputOption=USER_ENTERED',{
+        method:'POST',headers:{'Content-Type':'application/json'},
         body:JSON.stringify({values:[[s.codice,s.turno,s.dataTurno,'NO',s.nota,s.ol,s.ass,s.pan]]})});
     }
   });
@@ -923,13 +1020,13 @@ function salvaPresenzaSheet(codice,turno,presente,nota,key,olVal,assVal,panVal){
       {range:'presenze!E'+pres.rowNum,values:[[nota]]},{range:'presenze!F'+pres.rowNum,values:[[ol]]},
       {range:'presenze!G'+pres.rowNum,values:[[ass]]},{range:'presenze!H'+pres.rowNum,values:[[pan]]}
     ];
-    fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
-      method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+    apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({valueInputOption:'USER_ENTERED',data:updates})
     }).then(function(r){if(!r.ok)throw new Error('Errore '+r.status);presenze[key]={presente:presente,nota:nota,ol:ol,ass:ass,pan:pan,rowNum:pres.rowNum};}).catch(function(e){alert('Errore: '+e.message);});
   } else {
-    fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:H:append?valueInputOption=USER_ENTERED',{
-      method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+    apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/presenze!A:H:append?valueInputOption=USER_ENTERED',{
+      method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({values:[[codice,turno,dataTurno,presente,nota,ol,ass,pan]]})
     }).then(function(r){if(!r.ok)throw new Error('Errore '+r.status);return r.json();})
     .then(function(){fetchSheet('presenze!A1:H2000').then(function(r){parsePresenze(r.values||[]);});}).catch(function(e){alert('Errore: '+e.message);});
@@ -945,8 +1042,8 @@ function modificaDataPartenza(){
 function salvaDataPartenza(){
   var val=document.getElementById('data-partenza-input').value.trim();
   if(!val) return;
-  fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('giorni turni!B2')+'?valueInputOption=USER_ENTERED',{
-    method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},
+  apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('giorni turni!B2')+'?valueInputOption=USER_ENTERED',{
+    method:'PUT',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({range:'giorni turni!B2',values:[[val]]})
   }).then(function(r){if(!r.ok)throw new Error('Errore '+r.status);
     document.getElementById('data-partenza-display').textContent=formatDataEstesa(val);
