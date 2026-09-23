@@ -91,6 +91,8 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   Messaggi), salvata in `sessionStorage` (chiave `casetta_vista`). Ogni accesso nuovo dalla
   schermata "Accedi con Google" (e "Esci") la cancella: si parte da Cerca. Deciso: se il telefono
   resta collegato e passa da un volontario all'altro, va bene che resti sull'ultima scheda.
+  All'avvio `mostraVistaSubito` apre la scheda salvata prima di caricare i dati (niente passaggio
+  su Cerca), con "Caricamento…"; poi `ripristinaVista` completa turno, messaggi e lingua.
 - 2026-09 — Telefoni condivisi: dalla schermata di accesso Google mostra sempre la scelta dell'account
   (`prompt:'select_account'`, senza `login_hint`). La barra "Continua" (rinnovo a sessione in corso)
   usa invece `prompt:''` con `login_hint` della persona collegata.
