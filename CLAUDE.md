@@ -68,8 +68,8 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
 ## File nel repository
 
 - `anagrafica_casetta_solidale.html` — l'app.
-- `test.html`, `app2.html` — copie vecchie (in attesa di conferma per cancellarle).
-  Nota: `test.html` punta a un altro foglio Google (SPREADSHEET_ID diverso).
+- `test.html`, `app2.html` — copie vecchie, cancellate (2026-09, con conferma). Si recuperano dalla
+  storia del repository se servissero. `test.html` puntava a un altro foglio Google.
 
 ## Decisioni prese
 
@@ -84,8 +84,7 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.
-2. Permessi e pulizia — permesso Drive tolto; cancellazione di `test.html` e `app2.html` in attesa
-   di conferma.
+2. Permessi e pulizia — fatto (permesso Drive tolto, copie vecchie cancellate).
 3. Restare collegati dopo un refresh e rinnovo del token scaduto — fatto (vedi Decisioni).
 4. Nuovo modo di registrare i ritiri ("Conferma ritiro" per persona, niente più "Chiudi turno"),
    nuova struttura del foglio "presenze" (una riga per ritiro), vecchi dati in "presenze_archivio",
