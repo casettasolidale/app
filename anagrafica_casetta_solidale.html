@@ -458,9 +458,13 @@ function chiediToken(scegliAccount) {
   tokenClient.requestAccessToken(opz);
 }
 
-// Dalla schermata di accesso entra sempre una persona "nuova": si dimentica chi c'era prima
-// e Google fa scegliere l'account (niente suggerimento con l'email del volontario precedente).
-function loginGoogle() { utenteEmail=''; utenteNome=''; chiediToken(true); }
+// Dalla schermata di accesso è sempre un accesso nuovo: si riparte da Cerca e Google fa
+// scegliere l'account (niente suggerimento con l'email del volontario precedente).
+function loginGoogle() {
+  utenteEmail=''; utenteNome='';
+  try { sessionStorage.removeItem(VISTA_KEY); } catch(e) {}
+  chiediToken(true);
+}
 
 function tokenRicevuto(resp) {
   if (resp.error) { if (appAperta) mostraBarraAccesso('Errore di accesso: '+resp.error+'. Tocca "Continua" per riprovare.'); else alert('Errore login: ' + resp.error); return; }
@@ -676,18 +680,16 @@ function mostraStatistiche() {
 
 // ===== VISTA =====
 // Ricorda (solo in questa scheda del browser) dove si era: scheda, turno aperto, turno e lingua
-// dei messaggi. Dopo un refresh l'app riapre la stessa vista.
+// dei messaggi. Dopo un refresh con l'accesso ancora valido l'app riapre la stessa vista;
+// un accesso nuovo (loginGoogle) la cancella e si parte da Cerca.
 var VISTA_KEY='casetta_vista', vistaRipristinata=false;
-function chiSonoIo() { return utenteEmail||utenteNome||''; }
 function ricordaVista(campo,valore) {
-  try { var v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); v[campo]=valore; v.utente=chiSonoIo(); sessionStorage.setItem(VISTA_KEY,JSON.stringify(v)); } catch(e) {}
+  try { var v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); v[campo]=valore; sessionStorage.setItem(VISTA_KEY,JSON.stringify(v)); } catch(e) {}
 }
 function ripristinaVista() {
   if (vistaRipristinata) return;
   vistaRipristinata=true;
   var v={}; try { v=JSON.parse(sessionStorage.getItem(VISTA_KEY)||'{}'); } catch(e) {}
-  // la vista si riapre solo per la stessa persona; per un altro volontario si parte da Cerca
-  if (!v.utente || v.utente!==chiSonoIo()) { try { sessionStorage.removeItem(VISTA_KEY); } catch(e) {} return; }
   var clicca=function(selettore,valore){
     var bs=document.querySelectorAll(selettore);
     for(var i=0;i<bs.length;i++){ if((bs[i].getAttribute('onclick')||'').indexOf("'"+valore+"'")>=0){ bs[i].click(); return true; } }
