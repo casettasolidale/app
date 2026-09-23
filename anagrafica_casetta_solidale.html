@@ -1249,12 +1249,8 @@ function htmlRiga(p) {
       '<div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'+
         '<button class="btn-conferma" onclick="confermaRitiro(\''+cod+'\')"'+btnDis+'>'+etich+'</button>'+
         (inCorrezione[cod]&&!inCorso[cod]?'<button class="btn-correggi" onclick="annullaCorrezione(\''+cod+'\')">Annulla</button>':'')+
-<<<<<<< HEAD
         (ospite&&!rit&&!inCorso[cod]?'<button class="btn-correggi" onclick="togliOspite(\''+cod+'\')">Togli da questo turno</button>':'')+
-        (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli "venuta" per annullare il ritiro</span>':'')+
-=======
         (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli la spunta del pacco per annullare il ritiro</span>':'')+
->>>>>>> claude/charming-hypatia-fqamxq-ritiri
       '</div>'+
       (errori[cod]?'<div class="ritiro-errore">⚠️ Non salvato: '+errori[cod]+'. Controlla la connessione e premi "Riprova".</div>':'');
   }
