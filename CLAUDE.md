@@ -21,8 +21,15 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   banco, situazione banco/autocert.
 - **giorni turni**: B2 = data di inizio del giro di turni ("turni a partire da");
   intestazioni in riga 4, dati dalla riga 5.
-- **presenze**: oggi colonne A–H: codice, turno, data turno, SI/NO, note, olio, ass, pan.
-  (Verrà ristrutturato con il compito 4: vedi "Lavori in corso".)
+- **presenze**: una riga per ogni ritiro (dal compito 4). Colonne A–L:
+  codice | inizio giro (valore di B2) | turno previsto (da Anagrafica) | turno effettivo |
+  fuori turno (SI se effettivo ≠ previsto) | data ritiro (giorno in cui è venuta; vuota se assente) |
+  esito (SI/NO) | olio | ass | pan (SI/NO solo se la persona ne ha diritto, altrimenti vuoto) |
+  nota (automatica: correzioni, "assente: giro chiuso il …") | registrato il (gg/mm/aaaa hh:mm).
+  Scritte con `valueInputOption=RAW` (testo così com'è). Se la riga 1 non ha "inizio giro" in B1,
+  l'app considera il foglio di vecchia struttura e blocca le conferme.
+- **presenze_archivio**: i dati della vecchia scheda "presenze" (colonne A–H: codice, turno,
+  data turno, SI/NO, note, olio, ass, pan). L'app non la legge.
 
 ### Turni
 
@@ -81,12 +88,22 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   (un tocco, `requestAccessToken({prompt:''})` con `login_hint` se l'email è nota) e la chiamata
   viene ripetuta. Non usare più `fetch` diretto verso sheets.googleapis.com.
 
+- 2026-09 — Registrazione ritiri (compito 4): niente più "Chiudi turno". Ogni persona ha le sue
+  spunte (restano solo sul telefono) e "✓ Conferma ritiro", che rilegge il foglio e fa una sola
+  scrittura (se c'è già un SI nel giro non scrive; se c'è un NO aggiorna quella riga). "Correggi"
+  riscrive la stessa riga (la data del ritiro resta quella originale). Il pulsante note si chiama
+  "Registra nota" (scrive in Anagrafica!H come prima). Non si registra il nome del volontario
+  (deciso: non serve).
+- 2026-09 — Chiusura del giro: cambiando la data "Turni a partire da" l'app, dopo conferma, segna
+  esito NO per le persone attive **con un turno** (domicilio D compreso) senza ritiro nel giro che si
+  chiude, poi scrive B2 e mostra presenti/assenti. Ripetibile senza doppioni.
+
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.
 2. Permessi e pulizia — fatto (permesso Drive tolto, copie vecchie cancellate).
 3. Restare collegati dopo un refresh e rinnovo del token scaduto — fatto (vedi Decisioni).
-4. Nuovo modo di registrare i ritiri ("Conferma ritiro" per persona, niente più "Chiudi turno"),
+4. (fatto, vedi Decisioni) Nuovo modo di registrare i ritiri ("Conferma ritiro" per persona, niente più "Chiudi turno"),
    nuova struttura del foglio "presenze" (una riga per ritiro), vecchi dati in "presenze_archivio",
    assenti registrati alla chiusura del giro.
 5. Persone che vengono una tantum in un turno diverso dal proprio (solo per il giro in corso).
