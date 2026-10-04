@@ -125,6 +125,13 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   Nel turno di origine la persona resta visibile in grigio ("Ha ritirato nel turno X del …"), senza
   conferma ma con "Registra nota". Nei Messaggi chi ha già un SI nel giro non compare.
   L'Anagrafica non cambia mai.
+- 2026-10 — Nuovo utente: il codice si sceglie da un menu dei codici liberi (righe con codice ma
+  senza nome, numeri mancanti nella sequenza, numero dopo il più alto); il primo è consigliato.
+  Prima di salvare l'app rilegge l'Anagrafica: se il codice è stato appena preso da un altro
+  volontario avvisa e aggiorna il menu. Se il codice non ha ancora una riga, ne aggiunge una in fondo
+  scrivendo anche la colonna A. Se nome (stesse parole in qualsiasi ordine, senza accenti) o telefono
+  (solo cifre, senza +39) coincidono con una persona già registrata, anche non attiva, chiede
+  conferma prima di inserire. Nome obbligatorio.
 
 ## Lavori in corso (compiti concordati)
 
