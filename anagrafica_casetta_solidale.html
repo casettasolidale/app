@@ -713,6 +713,13 @@ function mostraStatistiche() {
     }).join('') : '<div style="font-size:13px;color:var(--testo-muted)">Tutti gli orari sono validi ✓</div>') +
   '</div>';
 
+  if (strutturaRitiriOk && !datiGiaImportati()) {
+    html += '<div style="background:#fff3cd;border-radius:12px;padding:16px 20px;border:1.5px solid #f0d58a">' +
+      '<div style="font-size:16px;font-weight:700;margin-bottom:6px">📦 Dati del vecchio sistema</div>' +
+      '<div style="font-size:13px;color:#664d03;margin-bottom:10px">Copia una volta sola i ritiri della scheda "presenze_archivio" nel foglio nuovo. L\u2019archivio non viene toccato.</div>' +
+      '<button id="btn-importa" class="btn-conferma" onclick="importaDatiVecchi()">Importa i dati del vecchio sistema</button>' +
+    '</div>';
+  }
   document.getElementById('stats-content').innerHTML = html;
 }
 
@@ -1402,6 +1409,82 @@ function aggiungiRighe(righe) {
   return apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('presenze!A:L')+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:righe})
   }).then(function(r){ if(!r.ok) throw new Error('errore '+r.status); });
+}
+
+// ===== IMPORTAZIONE DEI DATI DEL VECCHIO SISTEMA (una volta sola) =====
+// Legge "presenze_archivio" (vecchio formato: codice | turno | data turno | SI/NO | note | olio | ass | pan)
+// e aggiunge i ritiri nel foglio "presenze" nel formato nuovo. L'archivio non viene toccato.
+// Le righe vecchie dello stesso codice+turno+data vengono unite (il vecchio sistema a volte ne
+// scriveva due, una con il SI e una senza): basta un SI per contare il ritiro.
+var NOTA_IMPORT = 'importato dal vecchio sistema';
+function datiGiaImportati() { return ritiri.some(function(r){ return r.nota.indexOf(NOTA_IMPORT)>=0; }); }
+
+// "mercoledì 1 ottobre", "1 ottobre", "01/10/2026" -> Date (l'anno manca: si prende quello più vicino a oggi, non nel futuro)
+function dataVecchia(s) {
+  s=String(s||'').trim().toLowerCase();
+  var m=s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if(m){ var a=parseInt(m[3],10); if(a<100) a+=2000; return new Date(a, parseInt(m[2],10)-1, parseInt(m[1],10)); }
+  var mesi=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+  m=s.match(/(\d{1,2})\s+([a-z]+)/);
+  if(!m||mesi.indexOf(m[2])<0) return null;
+  var oggi=new Date(), limite=new Date(oggi.getTime()+10*86400000);
+  var d=new Date(oggi.getFullYear(), mesi.indexOf(m[2]), parseInt(m[1],10));
+  if(d>limite) d=new Date(oggi.getFullYear()-1, mesi.indexOf(m[2]), parseInt(m[1],10));
+  return d;
+}
+function dataStr(d) { return due(d.getDate())+'/'+due(d.getMonth()+1)+'/'+d.getFullYear(); }
+function dataDaTesto(s) { var m=String(s||'').match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/); return m?new Date(parseInt(m[3],10),parseInt(m[2],10)-1,parseInt(m[1],10)):null; }
+
+function importaDatiVecchi() {
+  if(!strutturaRitiriOk){ alert('Il foglio "presenze" ha ancora la vecchia struttura: prima va preparato il foglio nuovo.'); return; }
+  var btn=document.getElementById('btn-importa');
+  var giro=prompt('Data di inizio del giro appena finito (gg/mm/aaaa).\nI ritiri da questa data in poi vengono collegati a quel giro, quelli più vecchi vengono segnati come "archivio".', inizioGiro||'');
+  if(giro===null) return;
+  giro=giro.trim();
+  var inizio=dataDaTesto(giro);
+  if(!inizio){ alert('Scrivi la data così: gg/mm/aaaa (per esempio 09/09/2026).'); return; }
+  btn.disabled=true; btn.textContent='Lettura…';
+  var fine=function(){ btn.disabled=false; btn.textContent='Importa i dati del vecchio sistema'; };
+  Promise.all([fetchSheet('presenze_archivio!A1:H5000'), leggiRitiri()]).then(function(res){
+    if(datiGiaImportati()){ alert('I dati del vecchio sistema sono già stati importati.'); mostraStatistiche(); return; }
+    var righe=(res[0].values||[]).slice(1), gruppi={}, ordine=[];
+    righe.forEach(function(r){
+      if(!r||!r[0]) return;
+      var c=function(k){ return String(r[k]||'').trim(); };
+      var key=c(0).padStart(3,'0')+'|'+c(1)+'|'+c(2);
+      if(!gruppi[key]){ gruppi[key]={codice:c(0).padStart(3,'0'), turno:c(1), dataRaw:c(2), esito:'', ol:'', ass:'', pan:'', note:[]}; ordine.push(key); }
+      var g=gruppi[key], e=c(3).toUpperCase();
+      if(e==='SI') g.esito='SI'; else if(e==='NO'&&g.esito!=='SI') g.esito='NO';
+      ['ol','ass','pan'].forEach(function(t,i){ var x=c(5+i).toUpperCase(); if(x==='SI') g[t]='SI'; else if(x==='NO'&&g[t]!=='SI') g[t]='NO'; });
+      if(c(4)&&g.note.indexOf(c(4))<0) g.note.push(c(4));
+    });
+    var nuove=[], nelGiro=0, archivio=0, dedotti=0, ora=adessoStr();
+    ordine.forEach(function(k){
+      var g=gruppi[k], d=dataVecchia(g.dataRaw), nota=NOTA_IMPORT+(g.dataRaw?' (turno del '+g.dataRaw+')':'');
+      var esito=g.esito;
+      if(!esito && (g.ol==='SI'||g.ass==='SI'||g.pan==='SI')){ esito='SI'; dedotti++; nota+=', presenza dedotta dagli extra'; }
+      if(!esito) return;
+      if(g.note.length) nota+=' — '+g.note.join(' / ');
+      var inGiro=d&&d>=inizio;
+      if(inGiro) nelGiro++; else archivio++;
+      nuove.push([g.codice, inGiro?giro:'archivio (prima del '+giro+')', g.turno, g.turno, '',
+        esito==='SI'&&d?dataStr(d):'', esito, g.ol, g.ass, g.pan, nota, ora]);
+    });
+    if(!nuove.length){ alert('Nella scheda "presenze_archivio" non ho trovato ritiri da importare.'); return; }
+    if(!confirm('Trovati '+nuove.length+' ritiri nel vecchio sistema:\n• '+nelGiro+' nel giro iniziato il '+giro+'\n• '+archivio+' più vecchi (segnati come archivio)'+
+      (dedotti?'\n• di cui '+dedotti+' senza SI ma con olio/assorbenti/pannoloni: li conto come presenti':'')+
+      '\n\nLa scheda "presenze_archivio" non viene toccata. Importare?')) return;
+    btn.textContent='Importazione…';
+    return aggiungiRighe(nuove).then(leggiRitiri).then(function(){
+      alert('Fatto: importati '+nuove.length+' ritiri.');
+      mostraStatistiche();
+    });
+  }).catch(function(e){
+    var msg=e.message||'';
+    alert(msg.indexOf('presenze_archivio')>=0||msg.indexOf('Unable to parse range')>=0
+      ? 'Non trovo la scheda "presenze_archivio" nel foglio. Controlla che si chiami esattamente così.'
+      : 'Errore: '+msg+'\nNon è stato importato niente: puoi riprovare.');
+  }).then(fine, fine);
 }
 
 function confermaRitiro(codice) {
