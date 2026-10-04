@@ -152,6 +152,10 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   sistema"): lì NO non veniva quasi mai scritto, quindi si deduce — persona attiva con turno senza
   riga = assente, extra previsto in Anagrafica ma vuoto = non preso — e l'avviso finisce con
   "(da verificare)".
+- 2026-10 — Frequenza: se il giro precedente è del sistema nuovo e la persona ha esito NO, l'avviso
+  diventa "Assente da N mesi", contando i giri consecutivi con NO (solo dati del sistema nuovo: ci si
+  ferma al primo giro con SI, senza riga o importato). Gli extra restano riferiti solo al mese
+  precedente. A ottobre 2026 resta "Mese scorso: assente (da verificare)".
 
 ## Lavori in corso (compiti concordati)
 
