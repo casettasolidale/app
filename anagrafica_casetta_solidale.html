@@ -1185,13 +1185,27 @@ function giroPrecedente() {
 // altrimenti gli extra che le spettavano e non ha preso. '' se non c'è niente da segnalare.
 function avvisoMeseScorso(codice) {
   var g=giroPrecedente(); if(!g) return '';
-  var r=ritiroNelGiro(codice, g); if(!r) return '';
-  if(r.esito==='NO') return 'Mese scorso: assente';
+  var r=ritiroNelGiro(codice, g), p=trovaPersona(codice)||{};
+  // Giro importato dal vecchio sistema: lì "NO" non veniva quasi mai scritto, quindi si deduce
+  // da cosa manca (riga assente = assente, extra previsto ma vuoto = non preso), "da verificare".
+  var vecchio=giroDaDatiVecchi(g), dubbio=vecchio?' (da verificare)':'';
+  if(!r) return (vecchio&&isAttivo(p)&&p.turno)?'Mese scorso: assente'+dubbio:'';
+  if(r.esito==='NO') return 'Mese scorso: assente'+dubbio;
   var no=[];
-  if(r.ol==='NO') no.push('no olio');
-  if(r.ass==='NO') no.push('no assorbenti');
-  if(r.pan==='NO') no.push('no pannoloni');
-  return no.length?'Mese scorso: '+no.join(', '):'';
+  [['ol','no olio'],['ass','no assorbenti'],['pan','no pannoloni']].forEach(function(x){
+    if(r[x[0]]==='NO' || (vecchio && r[x[0]]!=='SI' && parseInt(p[x[0]])>0)) no.push(x[1]);
+  });
+  return no.length?'Mese scorso: '+no.join(', ')+dubbio:'';
+}
+// true se tutte le righe di quel giro vengono dall'importazione del vecchio sistema
+function giroDaDatiVecchi(giro) {
+  var g=normData(giro), trovate=0;
+  for (var i=0;i<ritiri.length;i++) {
+    if (normData(ritiri[i].giro)!==g) continue;
+    if (ritiri[i].nota.indexOf('importato dal vecchio sistema')<0) return false;
+    trovate++;
+  }
+  return trovate>0;
 }
 
 function ritiroNelGiro(codice, giro) {
