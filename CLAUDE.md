@@ -125,6 +125,16 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   (solo cifre, senza +39) coincidono con una persona già registrata, anche non attiva, chiede
   conferma prima di inserire. Nome obbligatorio.
 
+- 2026-10 — Dati vecchi: restano in "presenze_archivio" (non toccata) **e** vengono copiati una volta
+  nel foglio nuovo con il pulsante "Importa i dati del vecchio sistema" (Statistiche; sparisce dopo
+  l'uso). Righe vecchie con stesso codice+turno+data unite (basta un SI; extra SI senza esito = SI
+  "presenza dedotta dagli extra"); righe senza esito né extra saltate. Ritiri con data ≥ inizio del
+  giro appena finito (chiesta all'utente) collegati a quel giro, gli altri con inizio giro
+  "archivio (prima del …)". Nota sempre "importato dal vecchio sistema (turno del …)".
+  Ordine del passaggio: accettare le PR → rinominare "presenze" in "presenze_archivio" → nuova scheda
+  "presenze" vuota → importare → solo dopo cambiare la data del giro (così il giro vecchio si chiude
+  con presenti e assenti giusti).
+
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.
