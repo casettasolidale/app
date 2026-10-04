@@ -1171,26 +1171,44 @@ function leggiRitiri() {
 }
 
 // Il ritiro di una persona nel giro in corso: prima un SI, altrimenti un NO, altrimenti null
-// Giro precedente a quello in corso: la data di inizio giro più recente prima di quella attuale
-// (le righe "archivio (prima del …)" non contano)
-function giroPrecedente() {
-  var attuale=normData(inizioGiro), migliore='', valore='';
+// Giri precedenti a quello in corso, dal più recente al più vecchio (date di inizio giro;
+// le righe "archivio (prima del …)" non contano)
+function giriPrecedenti() {
+  var attuale=normData(inizioGiro), visti={}, lista=[];
   ritiri.forEach(function(r){
     var g=normData(r.giro);
-    if(/^\d{4}-\d{2}-\d{2}$/.test(g) && g<attuale && g>migliore){ migliore=g; valore=r.giro; }
+    if(/^\d{4}-\d{2}-\d{2}$/.test(g) && g<attuale && !visti[g]){ visti[g]=true; lista.push({n:g, giro:r.giro}); }
   });
-  return valore;
+  lista.sort(function(a,b){ return a.n<b.n?1:-1; });
+  return lista.map(function(x){ return x.giro; });
 }
-// Avviso sul giro scorso (in qualsiasi turno): "assente" solo se c'è una riga NO,
-// altrimenti gli extra che le spettavano e non ha preso. '' se non c'è niente da segnalare.
+function giroPrecedente() { return giriPrecedenti()[0]||''; }
+
+// Avviso sui giri precedenti (in qualsiasi turno). '' se non c'è niente da segnalare.
+// - Giro precedente del sistema nuovo: "Assente da N mesi" contando i giri consecutivi con esito NO
+//   (solo dati del sistema nuovo; ci si ferma al primo giro con un ritiro, senza riga o importato);
+//   se ha ritirato, gli extra che le spettavano e non ha preso ("Mese scorso: no olio", …).
+// - Giro precedente importato dal vecchio sistema: lì "NO" non veniva quasi mai scritto, quindi si
+//   deduce da cosa manca (nessuna riga = assente, extra previsto ma vuoto = non preso), "(da verificare)".
 function avvisoMeseScorso(codice) {
-  var g=giroPrecedente(); if(!g) return '';
-  var r=ritiroNelGiro(codice, g), p=trovaPersona(codice)||{};
-  // Giro importato dal vecchio sistema: lì "NO" non veniva quasi mai scritto, quindi si deduce
-  // da cosa manca (riga assente = assente, extra previsto ma vuoto = non preso), "da verificare".
+  var giri=giriPrecedenti(); if(!giri.length) return '';
+  var g=giri[0], r=ritiroNelGiro(codice, g), p=trovaPersona(codice)||{};
   var vecchio=giroDaDatiVecchi(g), dubbio=vecchio?' (da verificare)':'';
-  if(!r) return (vecchio&&isAttivo(p)&&p.turno)?'Mese scorso: assente'+dubbio:'';
-  if(r.esito==='NO') return 'Mese scorso: assente'+dubbio;
+  if(vecchio){
+    if(!r) return (isAttivo(p)&&p.turno)?'Mese scorso: assente'+dubbio:'';
+    if(r.esito==='NO') return 'Mese scorso: assente'+dubbio;
+  } else {
+    if(!r) return '';
+    if(r.esito==='NO'){
+      var mesi=0;
+      for(var i=0;i<giri.length;i++){
+        if(giroDaDatiVecchi(giri[i])) break;
+        var x=ritiroNelGiro(codice, giri[i]);
+        if(x&&x.esito==='NO') mesi++; else break;
+      }
+      return 'Assente da '+mesi+(mesi===1?' mese':' mesi');
+    }
+  }
   var no=[];
   [['ol','no olio'],['ass','no assorbenti'],['pan','no pannoloni']].forEach(function(x){
     if(r[x[0]]==='NO' || (vecchio && r[x[0]]!=='SI' && parseInt(p[x[0]])>0)) no.push(x[1]);
