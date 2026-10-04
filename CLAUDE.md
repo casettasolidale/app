@@ -148,6 +148,10 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   "Mese scorso: assente" solo se c'è una riga con esito NO (niente riga = niente avviso, per non dare
   falsi allarmi sui dati vecchi incompleti); se ha ritirato, elenca gli extra con NO
   ("no olio", "no assorbenti", "no pannoloni").
+  Eccezione per il giro importato dal vecchio sistema (tutte le righe con "importato dal vecchio
+  sistema"): lì NO non veniva quasi mai scritto, quindi si deduce — persona attiva con turno senza
+  riga = assente, extra previsto in Anagrafica ma vuoto = non preso — e l'avviso finisce con
+  "(da verificare)".
 
 ## Lavori in corso (compiti concordati)
 
