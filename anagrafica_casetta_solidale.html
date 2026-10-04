@@ -242,6 +242,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
       <button class="btn-close" onclick="closeModal()">✕</button>
     </div>
     <div class="section-label">Dati anagrafici</div>
+    <div class="field" id="field-codice" style="display:none"><label>Codice</label><select id="edit-codice"></select></div>
     <div class="field"><label>Nome e Cognome</label><input type="text" id="edit-nome"></div>
     <div class="grid2">
       <div class="field"><label>Telefono</label><input type="text" id="edit-tel"></div>
@@ -869,18 +870,33 @@ function orariDaSistemare() {
   return anagrafica.filter(function(p){ return isAttivo(p)&&p.nome&&p.turno&&p.turno!=='D'&&!orarioValido(p.turno,p.orario); });
 }
 
+// ===== NUOVO UTENTE: codice libero e controllo doppioni =====
+var modoNuovo = false;
+
+// Codici liberi: righe del foglio con codice ma senza nome, numeri mancanti nella sequenza,
+// e il numero dopo il più alto. In ordine crescente: il primo è quello consigliato.
+function codiciLiberi(lista) {
+  var usati={}, max=0;
+  lista.forEach(function(p){
+    var n=parseInt(p.codice,10)||0; if(n>max) max=n;
+    if(p.nome&&p.nome.trim()) usati[n]=true;
+  });
+  var liberi=[];
+  for(var n=1;n<=max+1;n++){ if(!usati[n]) liberi.push(String(n).padStart(3,'0')); }
+  return liberi;
+}
+
+function riempiCodici() {
+  var liberi=codiciLiberi(anagrafica), sel=document.getElementById('edit-codice');
+  sel.innerHTML=liberi.map(function(c,i){ return '<option value="'+c+'">'+c+(i===0?' — primo libero':'')+'</option>'; }).join('');
+  sel.value=liberi[0];
+}
+
 function apriNuovoUtente() {
-  var nuovoCodice='';
-  for(var i=0;i<anagrafica.length;i++){if(!anagrafica[i].nome||anagrafica[i].nome.trim()===''){nuovoCodice=anagrafica[i].codice;editIdx=i;break;}}
-  if(!nuovoCodice){
-    var maxCod=0;
-    anagrafica.forEach(function(p){var n=parseInt(p.codice)||0;if(n>maxCod)maxCod=n;});
-    nuovoCodice=String(maxCod+1).padStart(3,'0');
-    anagrafica.push({rowNum:anagrafica.length+2,codice:nuovoCodice,attivo:'sì',turno:'',orario:'',nome:'',esigenze:'',note:'',telefono:'no tel',noWa:'',indirizzo:'',autocert:'manca',totN:'',ad:'',min:'',ol:'',ass:'',pan:'',banco:'',sitBanco:'',daRegistrare:false});
-    editIdx=anagrafica.length-1;
-  }
-  var p=anagrafica[editIdx];
-  document.getElementById('modal-title').textContent='➕ Nuovo utente — codice '+nuovoCodice;
+  modoNuovo=true; editIdx=-1;
+  document.getElementById('modal-title').textContent='➕ Nuovo utente';
+  document.getElementById('field-codice').style.display='block';
+  riempiCodici();
   ['nome','tel','esigenze','note','totn','ad','min','ol','ass','pan','banco','sitbanco'].forEach(function(f){document.getElementById('edit-'+f).value='';});
   document.getElementById('edit-nowa').value='';
   document.getElementById('edit-attivo').value='sì';
@@ -892,8 +908,35 @@ function apriNuovoUtente() {
   document.getElementById('modal-overlay').classList.add('open');
 }
 
+// Per riconoscere la stessa persona: nome senza accenti/maiuscole, parole in qualsiasi ordine
+function paroleNome(s) {
+  return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z]+/g,' ').trim().split(' ').filter(Boolean).sort();
+}
+function stessoNome(a, b) {
+  var x=paroleNome(a), y=paroleNome(b);
+  if(!x.length||!y.length) return false;
+  if(x.join(' ')===y.join(' ')) return true;
+  // "Mario Rossi" e "Mario Rossi Bianchi": tutte le parole del nome più corto (almeno 2) nell'altro
+  var corto=x.length<=y.length?x:y, lungo=x.length<=y.length?y:x;
+  return corto.length>=2 && corto.every(function(w){ return lungo.indexOf(w)>=0; });
+}
+// Telefono solo cifre, senza prefisso internazionale +39 / 0039
+function cifreTelefono(s) {
+  var t=String(s||'').replace(/\D/g,'');
+  if(/^0039/.test(t)) t=t.slice(4); else if(/^39\d{9,10}$/.test(t)) t=t.slice(2);
+  return t.length>=6?t:'';
+}
+function possibiliDoppioni(lista, nome, tel) {
+  var t=cifreTelefono(tel);
+  return lista.filter(function(p){
+    if(!p.nome||!p.nome.trim()) return false;
+    return stessoNome(p.nome, nome) || (t && cifreTelefono(p.telefono)===t);
+  });
+}
+
 function apriModifica(idx) {
-  editIdx=idx; var p=anagrafica[idx];
+  modoNuovo=false; editIdx=idx; var p=anagrafica[idx];
+  document.getElementById('field-codice').style.display='none';
   document.getElementById('modal-title').textContent=p.nome+' — '+p.codice;
   document.getElementById('edit-nome').value=p.nome;
   document.getElementById('edit-tel').value=p.telefono==='no tel'?'':p.telefono;
@@ -917,11 +960,11 @@ function apriModifica(idx) {
   document.getElementById('modal-overlay').classList.add('open');
 }
 
-function closeModal(){document.getElementById('modal-overlay').classList.remove('open');editIdx=-1;}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');editIdx=-1;modoNuovo=false;}
 
 function salva() {
-  if(editIdx<0) return;
-  var p=anagrafica[editIdx], btn=document.getElementById('btn-save'), status=document.getElementById('save-status');
+  if(editIdx<0 && !modoNuovo) return;
+  var p=modoNuovo?null:anagrafica[editIdx], btn=document.getElementById('btn-save'), status=document.getElementById('save-status');
   var turnoScelto=document.getElementById('edit-turno').value, orarioScelto=document.getElementById('edit-orario').value;
   if(haOrari(turnoScelto) && !orarioValido(turnoScelto, orarioScelto)){
     status.innerHTML='<span class="save-err">Scegli un orario valido dal menu prima di salvare.</span>';
@@ -929,6 +972,7 @@ function salva() {
     return;
   }
   if(turnoScelto==='D' || !turnoScelto) orarioScelto='';
+  if(modoNuovo){ salvaNuovoUtente(orarioScelto); return; }
   btn.disabled=true; btn.textContent='Salvataggio...'; status.textContent='';
   p.nome=document.getElementById('edit-nome').value;
   p.telefono=document.getElementById('edit-tel').value.trim()||'no tel';
@@ -968,6 +1012,53 @@ function salva() {
     setTimeout(closeModal,1200);
   }).catch(function(e){status.innerHTML='<span class="save-err">Errore: '+e.message+'</span>';})
   .finally(function(){btn.disabled=false;btn.textContent='Salva modifiche';});
+}
+
+function salvaNuovoUtente(orarioScelto) {
+  var btn=document.getElementById('btn-save'), status=document.getElementById('save-status');
+  var v=function(id){ return document.getElementById(id).value; };
+  var codice=v('edit-codice'), nome=v('edit-nome').trim(), tel=v('edit-tel').trim();
+  if(!nome){ status.innerHTML='<span class="save-err">Scrivi nome e cognome prima di salvare.</span>'; return; }
+  btn.disabled=true; btn.textContent='Controllo…'; status.textContent='';
+  var fine=function(){ btn.disabled=false; btn.textContent='Salva modifiche'; };
+  // rileggo l'anagrafica: il codice potrebbe essere appena stato preso da un altro volontario
+  fetchSheet('Anagrafica!A1:T500').then(function(res){
+    var righe=res.values||[];
+    parseAnagrafica(righe);
+    var esistente=null;
+    for(var i=0;i<anagrafica.length;i++){ if(anagrafica[i].codice===codice){ esistente=anagrafica[i]; break; } }
+    if(esistente && esistente.nome && esistente.nome.trim()){
+      riempiCodici(); fine();
+      status.innerHTML='<span class="save-err">Il codice '+codice+' è appena stato usato da un altro volontario. Ho aggiornato l’elenco: controlla il codice e salva di nuovo.</span>';
+      return;
+    }
+    var doppi=possibiliDoppioni(anagrafica, nome, tel);
+    if(doppi.length){
+      var elenco=doppi.slice(0,5).map(function(p){
+        return '• '+p.codice+' '+p.nome+(p.telefono&&p.telefono!=='no tel'?' — tel. '+p.telefono:'')+' ('+(isAttivo(p)?'attivo':'non attivo')+(p.turno?', turno '+p.turno:', senza turno')+')';
+      }).join('\n');
+      if(!confirm('Attenzione: questa persona potrebbe essere già registrata (stesso nome o stesso telefono):\n\n'+elenco+'\n\nFai una verifica. Vuoi inserirla comunque come nuovo utente?')){
+        fine(); status.innerHTML='<span class="save-err">Non salvato. Cerca la persona nella scheda Cerca per controllare.</span>'; return;
+      }
+    }
+    btn.textContent='Salvataggio...';
+    var row=esistente?esistente.rowNum:righe.length+1;
+    var autocertVal=v('edit-autocert')==='si'?'x':'';
+    var valori=[[v('edit-attivo'), v('edit-turno'), orarioScelto, nome, v('edit-esigenze'), v('edit-note'), tel, v('edit-nowa'),
+      null, autocertVal, v('edit-totn'), v('edit-ad'), v('edit-min'), v('edit-ol'), v('edit-ass'), v('edit-pan'), v('edit-banco'), v('edit-sitbanco')]];
+    var dati=[{range:'Anagrafica!C'+row+':J'+row, values:[valori[0].slice(0,8)]},
+              {range:'Anagrafica!L'+row+':T'+row, values:[valori[0].slice(9)]}];
+    if(!esistente) dati.push({range:'Anagrafica!A'+row, values:[[codice]]});
+    return apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({valueInputOption:'USER_ENTERED',data:dati})
+    }).then(function(r){
+      if(!r.ok) throw new Error('Errore '+r.status);
+      fine();
+      status.innerHTML='<span class="save-ok">✓ Salvato con codice '+codice+'!</span>';
+      setTimeout(function(){ closeModal(); caricaDati(); },1200);
+    });
+  }).catch(function(e){ fine(); status.innerHTML='<span class="save-err">Errore: '+e.message+'</span>'; });
 }
 
 function aggiornaTurniButtons() {
