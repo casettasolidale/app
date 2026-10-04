@@ -143,6 +143,12 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   "presenze" vuota → importare → solo dopo cambiare la data del giro (così il giro vecchio si chiude
   con presenti e assenti giusti).
 
+- 2026-10 — Avviso "mese scorso" (schermata del turno e foglio stampato): guarda il giro precedente
+  (data di inizio giro più recente prima di quella attuale, righe "archivio" escluse) in tutti i turni.
+  "Mese scorso: assente" solo se c'è una riga con esito NO (niente riga = niente avviso, per non dare
+  falsi allarmi sui dati vecchi incompleti); se ha ritirato, elenca gli extra con NO
+  ("no olio", "no assorbenti", "no pannoloni").
+
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.

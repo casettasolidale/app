@@ -108,6 +108,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .tag-ospite { background: #fef3e2; color: var(--arancio); }
 .ospite-riga { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 8px 10px; border: 1px solid var(--bordo); border-radius: 8px; margin-bottom: 6px; font-size: 13px; background: white; }
 .ospite-msg { font-size: 13px; color: var(--testo-muted); padding: 6px 2px; }
+.avviso-mese { display: inline-block; background: #fff3cd; color: #856404; border-radius: 6px; padding: 2px 8px; font-size: 12px; font-weight: 700; margin-top: 4px; }
 .riga-fatta { background: #e8f5e9; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
 .riga-altrove { background: #f1f1f1; color: #888; border-radius: 8px; padding-left: 8px; padding-right: 8px; }
 .riga-altrove .presence-name, .riga-altrove .presence-meta { color: #888; }
@@ -1170,6 +1171,29 @@ function leggiRitiri() {
 }
 
 // Il ritiro di una persona nel giro in corso: prima un SI, altrimenti un NO, altrimenti null
+// Giro precedente a quello in corso: la data di inizio giro più recente prima di quella attuale
+// (le righe "archivio (prima del …)" non contano)
+function giroPrecedente() {
+  var attuale=normData(inizioGiro), migliore='', valore='';
+  ritiri.forEach(function(r){
+    var g=normData(r.giro);
+    if(/^\d{4}-\d{2}-\d{2}$/.test(g) && g<attuale && g>migliore){ migliore=g; valore=r.giro; }
+  });
+  return valore;
+}
+// Avviso sul giro scorso (in qualsiasi turno): "assente" solo se c'è una riga NO,
+// altrimenti gli extra che le spettavano e non ha preso. '' se non c'è niente da segnalare.
+function avvisoMeseScorso(codice) {
+  var g=giroPrecedente(); if(!g) return '';
+  var r=ritiroNelGiro(codice, g); if(!r) return '';
+  if(r.esito==='NO') return 'Mese scorso: assente';
+  var no=[];
+  if(r.ol==='NO') no.push('no olio');
+  if(r.ass==='NO') no.push('no assorbenti');
+  if(r.pan==='NO') no.push('no pannoloni');
+  return no.length?'Mese scorso: '+no.join(', '):'';
+}
+
 function ritiroNelGiro(codice, giro) {
   var g=normData(giro===undefined?inizioGiro:giro), no=null;
   for (var i=0;i<ritiri.length;i++) {
@@ -1363,6 +1387,7 @@ function htmlRiga(p) {
         ((ex.badges||ex.extras)?'<br><span style="font-size:11px">'+ex.badges+ex.extras+'</span>':'')+
       '</div>'+
       (p.esigenze?'<div style="font-size:12px;color:#856404;margin-top:2px">⚠️ '+p.esigenze+'</div>':'')+
+      (avvisoMeseScorso(cod)?'<div class="avviso-mese">⚠️ '+avvisoMeseScorso(cod)+'</div>':'')+
       '<div id="nota-display-'+cod+'" style="font-size:12px;color:#666;margin-top:4px;padding:5px 8px;background:#f8f9fa;border-radius:6px;border-left:3px solid #ccc;'+(p.note?'':'display:none')+'">📝 '+p.note+'</div>'+
       '<div style="margin-top:6px">'+ritiroHtml+'</div>'+
       '<div class="presence-note" style="margin-top:6px">'+
@@ -1672,6 +1697,7 @@ function generaHtmlTurno(turno){
     '.extra .hi{color:#e67e22;font-weight:700}',
     '.extra .box{display:inline-block;width:10px;height:10px;border:1.5px solid #bbb;border-radius:2px;vertical-align:middle;margin-right:3px}',
     '.esig{color:#856404;font-size:9px;line-height:1.5}',
+    '.mese{color:#c0392b;font-size:9px;font-weight:700;line-height:1.5}',
     '.nota{color:#666;font-size:8.5px;line-height:1.5}',
     '.footer{margin-top:8px;padding-top:5px;border-top:1px solid #eee;display:flex;justify-content:space-between;font-size:7px;color:#ccc}',
     '@page{size:A4 landscape;margin:0}',
@@ -1711,6 +1737,8 @@ function generaHtmlTurno(turno){
       if(p.ass&&parseInt(p.ass)>0) extraHtml+='<div><span class="box"></span>Assorbenti <b class="'+(parseInt(p.ass)>1?'hi':'')+'">'+p.ass+'</b></div>';
       if(p.pan&&parseInt(p.pan)>0) extraHtml+='<div><span class="box"></span>Pannoloni <b class="'+(parseInt(p.pan)>1?'hi':'')+'">'+p.pan+'</b></div>';
       var esigNote='';
+      var meseScorso=avvisoMeseScorso(p.codice);
+      if(meseScorso) esigNote+='<div class="mese">\u26a0\ufe0f '+meseScorso+'</div>';
       if(p.esigenze) esigNote+='<div class="esig">\u26a0\ufe0f '+p.esigenze+'</div>';
       if(p.note) esigNote+='<div class="nota">'+p.note+'</div>';
       html+='<tr>'+
