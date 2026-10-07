@@ -590,10 +590,30 @@ document.addEventListener('DOMContentLoaded', function() {
   if (tokenValido()) { programmaAvvisoScadenza(); entraNellApp(); }
 });
 
+// Trasforma una risposta di errore di Google in un messaggio comprensibile (promessa rifiutata).
+// Mostra anche il testo originale di Google, utile per capire problemi nuovi.
+function erroreGoogle(r) {
+  return r.text().then(function(t){
+    var msg=''; try { var j=JSON.parse(t); msg=(j.error&&(j.error.message||j.error.status))||''; } catch(e) { msg=t.substring(0,150); }
+    var spiegazione;
+    if (/protect/i.test(msg)) spiegazione='il foglio (o quelle celle) è protetto: va tolta la protezione da Dati → Fogli e intervalli protetti';
+    else if (/scope/i.test(msg)) spiegazione='manca il permesso di modifica: premi Esci, rientra e nella schermata di Google concedi l\u2019accesso ai fogli di lavoro';
+    else if (r.status===403) spiegazione='questo account Google non ha il permesso di modificare il foglio (deve essere Editor)';
+    else if (r.status===404 || /Unable to parse range/i.test(msg)) spiegazione='non trovo la scheda nel foglio: controlla i nomi delle schede';
+    else spiegazione='errore di Google';
+    throw new Error(spiegazione+' [errore '+r.status+(msg?': '+msg:'')+']');
+  });
+}
+// Messaggio da mostrare: distingue la mancanza di connessione dagli errori di Google
+function testoErrore(e) {
+  var m=(e&&e.message)||String(e);
+  return /Failed to fetch|NetworkError|Load failed|network/i.test(m)?'connessione assente o instabile. Controlla la rete':m;
+}
+
 function fetchSheet(range) {
   var url='https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(range);
   return apiFetch(url).then(function(r){
-    if(!r.ok) return r.text().then(function(t){throw new Error('Errore '+r.status+': '+t.substring(0,100));});
+    if(!r.ok) return erroreGoogle(r);
     return r.json();
   });
 }
@@ -621,7 +641,7 @@ function caricaDati() {
     aggiornaTurniButtons();
     mostraTurni();
     ripristinaVista();
-  }).catch(function(e){alert('Errore nel caricare i dati: '+e.message);});
+  }).catch(function(e){alert('Errore nel caricare i dati: '+testoErrore(e));});
 }
 
 function parseAnagrafica(rows) {
@@ -1025,11 +1045,11 @@ function salva() {
   apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
     method:'POST',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({valueInputOption:'USER_ENTERED',data:updates})
-  }).then(function(r){if(!r.ok)throw new Error('Errore '+r.status);
+  }).then(function(r){if(!r.ok) return erroreGoogle(r);
     status.innerHTML='<span class="save-ok">✓ Salvato!</span>';
     cerca(document.getElementById('search-input').value);
     setTimeout(closeModal,1200);
-  }).catch(function(e){status.innerHTML='<span class="save-err">Errore: '+e.message+'</span>';})
+  }).catch(function(e){status.innerHTML='<span class="save-err">Non salvato: '+testoErrore(e)+'</span>';})
   .finally(function(){btn.disabled=false;btn.textContent='Salva modifiche';});
 }
 
@@ -1072,12 +1092,12 @@ function salvaNuovoUtente(orarioScelto) {
       method:'POST',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({valueInputOption:'USER_ENTERED',data:dati})
     }).then(function(r){
-      if(!r.ok) throw new Error('Errore '+r.status);
+      if(!r.ok) return erroreGoogle(r);
       fine();
       status.innerHTML='<span class="save-ok">✓ Salvato con codice '+codice+'!</span>';
       setTimeout(function(){ closeModal(); caricaDati(); },1200);
     });
-  }).catch(function(e){ fine(); status.innerHTML='<span class="save-err">Errore: '+e.message+'</span>'; });
+  }).catch(function(e){ fine(); status.innerHTML='<span class="save-err">Non salvato: '+testoErrore(e)+'</span>'; });
 }
 
 function aggiornaTurniButtons() {
@@ -1301,7 +1321,7 @@ function aggiungiOspite(codice) {
     disegnaTurno();
     var el=document.getElementById('riga-'+codice); if(el&&el.scrollIntoView) el.scrollIntoView({block:'center'});
   }).catch(function(e){
-    if(riga) riga.innerHTML='<span class="ritiro-errore">⚠️ Non riesco a controllare il foglio: '+e.message+'. Riprova.</span>';
+    if(riga) riga.innerHTML='<span class="ritiro-errore">⚠️ Non riesco a controllare il foglio: '+testoErrore(e)+'. Riprova.</span>';
   });
 }
 
@@ -1329,7 +1349,7 @@ function apriTurno(turno) {
 function aggiornaTurnoDalFoglio() {
   var btn=document.getElementById('btn-aggiorna-turno');
   if(btn){btn.disabled=true;btn.textContent='…';}
-  leggiRitiri().then(disegnaTurno).catch(function(e){alert('Errore nel leggere i ritiri: '+e.message);})
+  leggiRitiri().then(disegnaTurno).catch(function(e){alert('Errore nel leggere i ritiri: '+testoErrore(e));})
   .then(function(){if(btn){btn.disabled=false;btn.textContent='🔄 Aggiorna';}});
 }
 
@@ -1406,7 +1426,7 @@ function htmlRiga(p) {
         (ospite&&!rit&&!inCorso[cod]?'<button class="btn-correggi" onclick="togliOspite(\''+cod+'\')">Togli da questo turno</button>':'')+
         (inCorrezione[cod]?'<span style="font-size:11px;color:var(--testo-muted)">Togli la spunta del pacco per annullare il ritiro</span>':'')+
       '</div>'+
-      (errori[cod]?'<div class="ritiro-errore">⚠️ Non salvato: '+errori[cod]+'. Controlla la connessione e premi "Riprova".</div>':'');
+      (errori[cod]?'<div class="ritiro-errore">⚠️ Non salvato: '+errori[cod]+'. Poi premi "Riprova".</div>':'');
   }
 
   return '<div class="'+classe+'">'+
@@ -1459,13 +1479,13 @@ function rigaRitiro(p, turnoEffettivo, esito, b, nota) {
 function scriviRiga(rowNum, valori) {
   return apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('presenze!A'+rowNum+':L'+rowNum)+'?valueInputOption=RAW',{
     method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[valori]})
-  }).then(function(r){ if(!r.ok) throw new Error('errore '+r.status); });
+  }).then(function(r){ if(!r.ok) return erroreGoogle(r); });
 }
 
 function aggiungiRighe(righe) {
   return apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('presenze!A:L')+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',{
     method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:righe})
-  }).then(function(r){ if(!r.ok) throw new Error('errore '+r.status); });
+  }).then(function(r){ if(!r.ok) return erroreGoogle(r); });
 }
 
 // ===== IMPORTAZIONE DEI DATI DEL VECCHIO SISTEMA (una volta sola) =====
@@ -1569,7 +1589,7 @@ function confermaRitiro(codice) {
     if(res==='gia'){ var r=ritiroNelGiro(codice); alert(p.nome+' risulta già registrata in questo giro (turno '+(r.effettivo||'?')+' del '+(r.data||'?')+'). Non ho creato un doppione.'); }
     ridisegnaRiga(codice);
   }).catch(function(e){
-    delete inCorso[codice]; errori[codice]=e.message;
+    delete inCorso[codice]; errori[codice]=testoErrore(e);
     ridisegnaRiga(codice);
   });
 }
@@ -1601,8 +1621,8 @@ function salvaNota(codice) {
   apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('Anagrafica!H'+p.rowNum)+'?valueInputOption=USER_ENTERED',{
     method:'PUT',headers:{'Content-Type':'application/json'},
     body:JSON.stringify({range:'Anagrafica!H'+p.rowNum,values:[[notaCompleta]]})
-  }).then(function(r){if(!r.ok)throw new Error('Errore '+r.status);btn.textContent='✓';setTimeout(function(){btn.textContent='Registra nota';btn.disabled=false;},2000);})
-  .catch(function(e){alert('Errore: '+e.message);btn.textContent='Registra nota';btn.disabled=false;});
+  }).then(function(r){if(!r.ok) return erroreGoogle(r);btn.textContent='✓';setTimeout(function(){btn.textContent='Registra nota';btn.disabled=false;},2000);})
+  .catch(function(e){alert('Nota non salvata: '+testoErrore(e));btn.textContent='Registra nota';btn.disabled=false;});
 }
 
 function modificaDataPartenza(){
@@ -1646,7 +1666,7 @@ function salvaDataPartenza(){
     return apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent('giorni turni!B2')+'?valueInputOption=USER_ENTERED',{
       method:'PUT',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({range:'giorni turni!B2',values:[[val]]})
-    }).then(function(r){ if(!r.ok) throw new Error('Errore '+r.status); return esito; });
+    }).then(function(r){ if(!r.ok) return erroreGoogle(r); return esito; });
   }).then(function(esito){
     fine();
     document.getElementById('data-partenza-edit').style.display='none';
@@ -1654,7 +1674,7 @@ function salvaDataPartenza(){
     caricaDati();
   }).catch(function(e){
     fine();
-    if(e.message!=='annullato') alert('Errore: '+e.message+'\n\nLa data non è stata cambiata. Puoi riprovare: chi è già stato segnato assente non verrà segnato due volte.');
+    if(e.message!=='annullato') alert('Errore: '+testoErrore(e)+'\n\nLa data non è stata cambiata. Puoi riprovare: chi è già stato segnato assente non verrà segnato due volte.');
   });
 }
 
