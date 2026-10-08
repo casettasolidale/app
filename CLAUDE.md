@@ -166,12 +166,10 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   caselle + Salva che scrive S = "registrato su banco" + Scarica Excel: .xlsx con SheetJS da cdnjs,
   se non si carica file CSV; colonne codice, nome, telefono, indirizzo, tot, adulti, minori, turno).
 
-- 2026-10 — Archiviazione utente (pulsante "🗄️ Archivia utente" nella scheda, solo per persone non
-  attive): copia la riga in "anagrafica_archivio" (creata dall'app se manca: intestazioni di Anagrafica
-  + "data archiviazione") con codice ex<codice>_<aaaa-mm-gg>; nel foglio "presenze" i ritiri di quel
-  codice prendono il codice ex…; in Anagrafica la riga NON si cancella (sposterebbe le righe sotto per
-  gli altri telefoni) ma si svuotano le colonne B–T (anche il codice anon, che è legato alla persona):
-  resta solo A (codice), che torna libero. Ripetibile senza doppioni. "presenze_archivio" non si tocca. Cerca mostra solo righe con nome.
+- 2026-10 — Cerca mostra solo le righe con un nome (le righe con solo il codice sono codici liberi).
+- 2026-10 — Deciso: niente archiviazione/eliminazione di utenti né rinomina dei codici: il codice resta
+  sempre legato alla persona registrata su Banco Alimentare (una funzione di archiviazione era stata
+  fatta e poi tolta su richiesta).
 
 - 2026-10 — Cerca: pulsante "👁️ Vedi inattivi (N)" che elenca le persone non attive; nei risultati le
   persone non attive hanno riquadro grigio (.persona-inattiva), etichetta "Non attivo" e codice bianco
