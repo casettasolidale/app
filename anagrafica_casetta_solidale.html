@@ -53,7 +53,6 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .tag-turno { background: var(--verde-light); color: var(--verde); }
 .badge-warn { background: #fff3cd; color: #856404; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .badge-ok { background: #d8f3dc; color: var(--verde); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
-.btn-archivia { width: 100%; padding: 10px; background: white; color: var(--testo-muted); border: 1.5px solid var(--bordo); border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; display: none; }
 .banco-riga { display: flex; align-items: flex-start; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--grigio); font-size: 14px; }
 .banco-riga input { width: 22px; height: 22px; accent-color: var(--verde); flex-shrink: 0; margin-top: 1px; }
 .banco-riga details { flex: 1; min-width: 0; }
@@ -342,7 +341,6 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
     <div class="field"><label>Esigenze particolari</label><textarea id="edit-esigenze"></textarea></div>
     <div class="field"><label>Note</label><textarea id="edit-note"></textarea></div>
     <button class="btn-save" id="btn-save" onclick="salva()">Salva modifiche</button>
-    <button class="btn-archivia" id="btn-archivia" onclick="archiviaUtente()">🗄️ Archivia utente</button>
     <div class="save-status" id="save-status"></div>
   </div>
 </div>
@@ -1093,7 +1091,6 @@ function riempiCodici() {
 
 function apriNuovoUtente() {
   modoNuovo=true; editIdx=-1;
-  document.getElementById('btn-archivia').style.display='none';
   document.getElementById('modal-title').textContent='➕ Nuovo utente';
   document.getElementById('field-codice').style.display='block';
   riempiCodici();
@@ -1137,7 +1134,6 @@ function possibiliDoppioni(lista, nome, tel) {
 
 function apriModifica(idx) {
   modoNuovo=false; editIdx=idx; var p=anagrafica[idx];
-  document.getElementById('btn-archivia').style.display=isAttivo(p)?'none':'block';
   document.getElementById('field-codice').style.display='none';
   document.getElementById('modal-title').textContent=p.nome+' — '+p.codice;
   document.getElementById('edit-nome').value=p.nome;
@@ -1160,83 +1156,6 @@ function apriModifica(idx) {
   document.getElementById('save-status').textContent='';
   document.getElementById('btn-save').disabled=false;
   document.getElementById('modal-overlay').classList.add('open');
-}
-
-// ===== ARCHIVIAZIONE DI UN UTENTE (libera il codice senza perdere lo storico) =====
-// 1) copia la persona in "anagrafica_archivio" con codice ex<codice>_<aaaa-mm-gg> (scheda creata se manca)
-// 2) nel foglio "presenze" i ritiri di quel codice prendono il codice ex…
-// 3) in Anagrafica la riga resta con il solo codice (A), tutto il resto svuotato: il codice torna libero
-// Le righe non vengono mai cancellate (spostare le righe confonderebbe gli altri telefoni aperti).
-// Si può ripetere se si interrompe: non crea doppioni. "presenze_archivio" (vecchio sistema) non si tocca.
-var ARCHIVIO_ANAGRAFICA='anagrafica_archivio';
-function urlSheets(resto){ return 'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+resto; }
-function okJson(r){ return r.ok ? r.json() : erroreGoogle(r); }
-
-function preparaArchivioAnagrafica(intestazioni) {
-  return apiFetch(urlSheets('?fields=sheets.properties.title')).then(okJson).then(function(info){
-    var esiste=(info.sheets||[]).some(function(s){ return s.properties.title===ARCHIVIO_ANAGRAFICA; });
-    if (esiste) return;
-    return apiFetch(urlSheets(':batchUpdate'),{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({requests:[{addSheet:{properties:{title:ARCHIVIO_ANAGRAFICA}}}]})
-    }).then(okJson).then(function(){
-      return apiFetch(urlSheets('/values/'+encodeURIComponent(ARCHIVIO_ANAGRAFICA+'!A1')+'?valueInputOption=RAW'),{method:'PUT',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({values:[intestazioni.concat(['data archiviazione'])]})}).then(okJson);
-    });
-  });
-}
-
-function archiviaUtente() {
-  if (editIdx<0||modoNuovo) return;
-  var p=anagrafica[editIdx], btn=document.getElementById('btn-archivia'), status=document.getElementById('save-status');
-  if (isAttivo(p)) { alert('Si possono archiviare solo le persone non attive.\nPrima imposta "Attivo: No", premi "Salva modifiche", poi riapri la scheda e archivia.'); return; }
-  var d=new Date(), data=d.getFullYear()+'-'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'-'+(d.getDate()<10?'0':'')+d.getDate();
-  var codice=p.codice, ex='ex'+codice+'_'+data, nome=p.nome;
-  if (!confirm('Archiviare '+nome+' (codice '+codice+')?\n\n• La persona viene spostata nella scheda "'+ARCHIVIO_ANAGRAFICA+'" con codice '+ex+'\n• I suoi ritiri nel foglio "presenze" prendono il codice '+ex+'\n• Il codice '+codice+' torna libero per un nuovo utente\n\nNon si perde niente.')) return;
-  btn.disabled=true; btn.textContent='Archiviazione…'; status.textContent='';
-  var riga=null, rinominati=0;
-  fetchSheet('Anagrafica!A1:T500').then(function(res){
-    var righe=res.values||[];
-    for (var i=1;i<righe.length;i++) {
-      var r=righe[i]||[];
-      if (String(r[0]||'').trim().padStart(3,'0')===codice) { riga={num:i+1, valori:r}; break; }
-    }
-    if (!riga) throw new Error('codice '+codice+' non trovato in Anagrafica');
-    if (String(riga.valori[5]||'').trim()!==nome) throw new Error('nel foglio il codice '+codice+' ora è di "'+String(riga.valori[5]||'').trim()+'": ricarica la pagina e controlla');
-    return preparaArchivioAnagrafica(righe[0]||[]);
-  }).then(function(){
-    // 1) copia nell'archivio (se non c'è già)
-    return fetchSheet(ARCHIVIO_ANAGRAFICA+'!A1:A5000').then(function(res){
-      var gia=(res.values||[]).some(function(r){ return String((r||[])[0]||'').trim()===ex; });
-      if (gia) return;
-      var v=[]; for (var k=0;k<20;k++) v.push(riga.valori[k]===undefined?'':String(riga.valori[k]));
-      v[0]=ex; v.push(data);
-      return apiFetch(urlSheets('/values/'+encodeURIComponent(ARCHIVIO_ANAGRAFICA+'!A:U')+':append?valueInputOption=RAW&insertDataOption=INSERT_ROWS'),
-        {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({values:[v]})}).then(okJson);
-    });
-  }).then(function(){
-    // 2) storico dei ritiri con il codice ex…
-    return fetchSheet('presenze!A1:A5000').then(function(res){
-      var dati=[];
-      (res.values||[]).forEach(function(r,i){
-        var c=String((r||[])[0]||'').trim();
-        if (i>0 && c===ex) rinominati++;
-        if (i>0 && c.padStart(3,'0')===codice) { dati.push({range:'presenze!A'+(i+1), values:[[ex]]}); rinominati++; }
-      });
-      if (!dati.length) return;
-      return apiFetch(urlSheets('/values:batchUpdate'),{method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({valueInputOption:'RAW',data:dati})}).then(okJson);
-    });
-  }).then(function(){
-    // 3) libera il codice: svuota i dati (colonne B–T, anche il codice anon), il codice resta
-    return apiFetch(urlSheets('/values:batchClear'),{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ranges:['Anagrafica!B'+riga.num+':T'+riga.num]})}).then(okJson);
-  }).then(function(){
-    alert('Fatto: '+nome+' è archiviata come '+ex+' ('+rinominati+' ritiri collegati).\nIl codice '+codice+' è di nuovo libero.');
-    closeModal(); caricaDati();
-    document.getElementById('search-input').value=''; cerca('');
-  }).catch(function(e){
-    status.innerHTML='<span class="save-err">Archiviazione non completata: '+testoErrore(e)+'. Puoi riprovare: non si creano doppioni.</span>';
-  }).then(function(){ btn.disabled=false; btn.textContent='🗄️ Archivia utente'; });
 }
 
 function closeModal(){document.getElementById('modal-overlay').classList.remove('open');editIdx=-1;modoNuovo=false;}
