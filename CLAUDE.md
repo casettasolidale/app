@@ -157,6 +157,15 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   ferma al primo giro con SI, senza riga o importato). Gli extra restano riferiti solo al mese
   precedente. A ottobre 2026 resta "Mese scorso: assente (da verificare)".
 
+- 2026-10 — Banco Alimentare (SIFEAD): si usa la colonna S "banco" di Anagrafica con i valori
+  "da registrare su banco" / "registrato su banco" (vuota = registrato; i vecchi testi con
+  "da registrare" in S o T contano come da registrare, salvo S = "registrato su banco").
+  Avvisi: 🔴 "⚠️ Da registrare su banco" (badge-danger), 🟡 "⚠️ Autocert manca" (badge-warn),
+  🟢 "🏦 Registrato su banco" (badge-ok). Nel modulo il campo è un menu; nuovo utente = da registrare.
+  Statistiche ha due sottoschede: Riepilogo e "🏦 Da registrare su banco" (attivi da registrare,
+  caselle + Salva che scrive S = "registrato su banco" + Scarica Excel: .xlsx con SheetJS da cdnjs,
+  se non si carica file CSV; colonne codice, nome, telefono, indirizzo, tot, adulti, minori, turno).
+
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.

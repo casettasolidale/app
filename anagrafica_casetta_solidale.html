@@ -48,6 +48,9 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .tag-chiama { background: #fef3e2; color: var(--arancio); }
 .tag-turno { background: var(--verde-light); color: var(--verde); }
 .badge-warn { background: #fff3cd; color: #856404; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.badge-ok { background: #d8f3dc; color: var(--verde); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+.banco-riga { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--grigio); font-size: 14px; cursor: pointer; }
+.banco-riga input { width: 22px; height: 22px; accent-color: var(--verde); flex-shrink: 0; }
 .badge-danger { background: #ffe0e0; color: var(--rosso); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .btn-edit { background: var(--grigio); border: 1px solid var(--bordo); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 16px; flex-shrink: 0; }
 .btn-edit:hover { background: var(--verde-light); }
@@ -245,6 +248,20 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
   </div>
 
     <div id="tab-statistiche" class="section">
+      <div class="turno-selector" style="margin-bottom:1rem">
+        <button class="turno-btn stat-sub active" data-sub="riepilogo" onclick="mostraStatSub('riepilogo')">📊 Riepilogo</button>
+        <button class="turno-btn stat-sub" data-sub="banco" onclick="mostraStatSub('banco')">🏦 Da registrare su banco (<span id="conto-banco">0</span>)</button>
+      </div>
+      <div class="card" id="banco-card" style="display:none">
+        <div class="card-title">Da registrare su Banco Alimentare</div>
+        <p style="font-size:13px;color:var(--testo-muted);margin-bottom:10px">Spunta le persone che hai registrato su SIFEAD e premi Salva: spariscono dall’elenco.</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+          <button id="btn-salva-banco" class="btn-conferma" onclick="salvaRegistratiBanco()">✓ Salva</button>
+          <button class="btn-back" onclick="scaricaExcelBanco()">⬇️ Scarica Excel</button>
+        </div>
+        <div id="banco-stato" class="save-status" style="text-align:left;margin:0 0 8px"></div>
+        <div id="banco-lista"></div>
+      </div>
       <div class="card" id="stats-card">
         <div class="card-title">Riepilogo beneficiari attivi</div>
         <div id="stats-content" style="display:flex;flex-direction:column;gap:16px">
@@ -304,7 +321,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
     </div>
     <div class="grid2">
       <div class="field"><label>Pannoloni</label><input type="text" id="edit-pan"></div>
-      <div class="field"><label>Banco</label><input type="text" id="edit-banco"></div>
+      <div class="field"><label>Banco Alimentare</label><select id="edit-banco"></select></div>
     </div>
     <div class="section-label">Note e situazione</div>
     <div class="field"><label>Situazione banco/autocert</label><textarea id="edit-sitbanco" style="min-height:50px"></textarea></div>
@@ -660,7 +677,7 @@ function parseAnagrafica(rows) {
       indirizzo:String(r[10]||'').trim(), autocert:autocert, totN:String(r[12]||'').trim(),
       ad:String(r[13]||'').trim(), min:String(r[14]||'').trim(), ol:String(r[15]||'').trim(),
       ass:String(r[16]||'').trim(), pan:String(r[17]||'').trim(), banco:bancoVal, sitBanco:sitBancoVal,
-      daRegistrare:(bancoVal+' '+sitBancoVal).toLowerCase().indexOf('registr')>=0
+      daRegistrare:calcolaDaRegistrare(bancoVal, sitBancoVal)
     });
   }
 }
@@ -681,6 +698,89 @@ function getDataTurno(turno) { var raw=giorniTurni[turno]||''; return raw?format
 function costruisciLingue() {
   var bar=document.getElementById('lingua-bar');
   bar.innerHTML=LINGUE.map(function(l,i){return '<button class="lingua-btn'+(i===0?' active':'')+'" onclick="setLingua(\''+l.code+'\',this)">'+l.label+'</button>';}).join('');
+}
+
+// ===== BANCO ALIMENTARE (SIFEAD) =====
+// Colonna S "banco" di Anagrafica: "da registrare su banco" oppure "registrato su banco".
+// Vuota = registrato. Anche i vecchi testi con "da registrare" (in S o T) contano come da registrare,
+// a meno che in S non ci sia esplicitamente "registrato su banco".
+var BANCO_DA = 'da registrare su banco', BANCO_OK = 'registrato su banco';
+function calcolaDaRegistrare(banco, sitBanco) {
+  if (String(banco||'').trim().toLowerCase()===BANCO_OK) return false;
+  return /registrar|non\s+registrat/i.test(String(banco||'')+' '+String(sitBanco||''));
+}
+function riempiBanco(valore) {
+  var sel=document.getElementById('edit-banco'), v=String(valore||'').trim();
+  var html='<option value="'+BANCO_DA+'">⚠️ Da registrare su banco</option><option value="'+BANCO_OK+'">🏦 Registrato su banco</option>';
+  var altro=v && v.toLowerCase()!==BANCO_DA && v.toLowerCase()!==BANCO_OK && !/registr/i.test(v);
+  if (altro) html+='<option value="'+v.replace(/"/g,'&quot;')+'">'+v+' (valore attuale)</option>';
+  sel.innerHTML=html;
+  sel.value = altro ? v : (calcolaDaRegistrare(v,'') ? BANCO_DA : BANCO_OK);
+}
+
+function mostraStatSub(quale) {
+  document.getElementById('stats-card').style.display = quale==='banco'?'none':'block';
+  document.getElementById('banco-card').style.display = quale==='banco'?'block':'none';
+  document.querySelectorAll('.stat-sub').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-sub')===quale); });
+  if (quale==='banco') mostraDaRegistrare();
+}
+function personeDaRegistrare() {
+  return anagrafica.filter(function(p){ return isAttivo(p)&&p.nome&&p.daRegistrare; })
+    .sort(function(a,b){ return a.codice<b.codice?-1:1; });
+}
+function aggiornaContoBanco() {
+  var el=document.getElementById('conto-banco'); if(el) el.textContent=personeDaRegistrare().length;
+}
+function mostraDaRegistrare() {
+  var lista=personeDaRegistrare(), el=document.getElementById('banco-lista');
+  aggiornaContoBanco();
+  if (!lista.length) { el.innerHTML='<p class="empty">Nessuna persona da registrare su banco ✓</p>'; return; }
+  el.innerHTML=lista.map(function(p){
+    return '<label class="banco-riga"><input type="checkbox" class="banco-chk" value="'+p.codice+'"> '+
+      '<span class="tag tag-codice">'+p.codice+'</span> <b>'+p.nome+'</b>'+(p.turno?' <span class="tag tag-turno">'+p.turno+'</span>':'')+'</label>';
+  }).join('');
+}
+function salvaRegistratiBanco() {
+  var scelti=[].slice.call(document.querySelectorAll('.banco-chk:checked')).map(function(c){ return c.value; });
+  var stato=document.getElementById('banco-stato'), btn=document.getElementById('btn-salva-banco');
+  if (!scelti.length) { stato.innerHTML='<span class="save-err">Spunta prima le persone che hai registrato su banco.</span>'; return; }
+  var persone=scelti.map(trovaPersona).filter(Boolean);
+  btn.disabled=true; btn.textContent='Salvataggio…'; stato.textContent='';
+  apiFetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values:batchUpdate',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({valueInputOption:'USER_ENTERED',data:persone.map(function(p){ return {range:'Anagrafica!S'+p.rowNum, values:[[BANCO_OK]]}; })})
+  }).then(function(r){
+    if(!r.ok) return erroreGoogle(r);
+    persone.forEach(function(p){ p.banco=BANCO_OK; p.daRegistrare=false; });
+    mostraDaRegistrare();
+    stato.innerHTML='<span class="save-ok">✓ '+persone.length+(persone.length===1?' persona segnata':' persone segnate')+' come registrata su banco</span>';
+  }).catch(function(e){ stato.innerHTML='<span class="save-err">Non salvato: '+testoErrore(e)+'</span>'; })
+  .then(function(){ btn.disabled=false; btn.textContent='✓ Salva'; });
+}
+// Scarica l'elenco in Excel (.xlsx con la libreria SheetJS; se non si carica, file CSV che Excel apre lo stesso)
+function scaricaExcelBanco() {
+  var lista=personeDaRegistrare();
+  if (!lista.length) { alert('Non ci sono persone da registrare su banco.'); return; }
+  var righe=[['Codice','Nome e cognome','Telefono','Indirizzo','Totale nucleo','Adulti','Minori','Turno']].concat(lista.map(function(p){
+    return [p.codice, p.nome, p.telefono==='no tel'?'':p.telefono, p.indirizzo, p.totN, p.ad, p.min, p.turno];
+  }));
+  var d=new Date(), nome='da_registrare_banco_'+d.getFullYear()+'-'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)+'-'+(d.getDate()<10?'0':'')+d.getDate();
+  var conCsv=function(){
+    var csv='﻿'+righe.map(function(r){ return r.map(function(c){ return '"'+String(c||'').replace(/"/g,'""')+'"'; }).join(';'); }).join('\r\n');
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=nome+'.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+  var conXlsx=function(){
+    var ws=XLSX.utils.aoa_to_sheet(righe); ws['!cols']=[{wch:8},{wch:28},{wch:14},{wch:30},{wch:8},{wch:8},{wch:8},{wch:8}];
+    var wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Da registrare');
+    XLSX.writeFile(wb, nome+'.xlsx');
+  };
+  if (window.XLSX) { conXlsx(); return; }
+  var s=document.createElement('script');
+  s.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+  s.onload=function(){ window.XLSX?conXlsx():conCsv(); };
+  s.onerror=conCsv;
+  document.head.appendChild(s);
 }
 
 function mostraStatistiche() {
@@ -742,6 +842,8 @@ function mostraStatistiche() {
     '</div>';
   }
   document.getElementById('stats-content').innerHTML = html;
+  aggiornaContoBanco();
+  if (document.getElementById('banco-card').style.display!=='none') mostraDaRegistrare();
 }
 
 // ===== VISTA =====
@@ -803,8 +905,9 @@ function tipoTag(noWa,telefono) {
 
 function buildPersonExtras(p) {
   var badges='';
-  if(p.daRegistrare) badges+='<span class="badge-warn">⚠️ Da registrare</span> ';
-  if(p.autocert==='manca') badges+='<span class="badge-danger">⚠️ Autocert manca</span> ';
+  if(p.daRegistrare) badges+='<span class="badge-danger">⚠️ Da registrare su banco</span> ';
+  else if(p.nome) badges+='<span class="badge-ok">🏦 Registrato su banco</span> ';
+  if(p.autocert==='manca') badges+='<span class="badge-warn">⚠️ Autocert manca</span> ';
   var extras='';
   if(p.totN) extras+='<span>👥 Nucleo: '+p.totN+'</span> ';
   if(p.ad) extras+='<span>Adulti: '+p.ad+'</span> ';
@@ -936,7 +1039,8 @@ function apriNuovoUtente() {
   document.getElementById('modal-title').textContent='➕ Nuovo utente';
   document.getElementById('field-codice').style.display='block';
   riempiCodici();
-  ['nome','tel','esigenze','note','totn','ad','min','ol','ass','pan','banco','sitbanco'].forEach(function(f){document.getElementById('edit-'+f).value='';});
+  riempiBanco(BANCO_DA);
+  ['nome','tel','esigenze','note','totn','ad','min','ol','ass','pan','sitbanco'].forEach(function(f){document.getElementById('edit-'+f).value='';});
   document.getElementById('edit-nowa').value='';
   document.getElementById('edit-attivo').value='sì';
   document.getElementById('edit-autocert').value='manca';
@@ -990,7 +1094,7 @@ function apriModifica(idx) {
   document.getElementById('edit-ol').value=p.ol;
   document.getElementById('edit-ass').value=p.ass;
   document.getElementById('edit-pan').value=p.pan;
-  document.getElementById('edit-banco').value=p.banco;
+  riempiBanco(p.banco);
   document.getElementById('edit-sitbanco').value=p.sitBanco;
   document.getElementById('edit-esigenze').value=p.esigenze;
   document.getElementById('edit-note').value=p.note;
@@ -1027,6 +1131,7 @@ function salva() {
   p.ass=document.getElementById('edit-ass').value;
   p.pan=document.getElementById('edit-pan').value;
   p.banco=document.getElementById('edit-banco').value;
+  p.daRegistrare=calcolaDaRegistrare(p.banco, document.getElementById('edit-sitbanco').value);
   p.sitBanco=document.getElementById('edit-sitbanco').value;
   p.esigenze=document.getElementById('edit-esigenze').value;
   p.note=document.getElementById('edit-note').value;
@@ -1781,9 +1886,10 @@ function generaHtmlTurno(turno){
       var rit=ritiroNelGiro(p.codice);
       var check=rit&&rit.esito==='SI'?'<span class="check done">\u2611</span>':'<span class="check">\u25a1</span>';
       var badges='';
-      if(p.autocert==='manca') badges+='<span class="badge-danger">Autocert manca</span><br>';
-      if(p.daRegistrare) badges+='<span class="badge-warn">Da registrare</span>';
-      var bancoInfo=[p.banco,p.sitBanco].filter(function(v){return v&&v.trim();}).join(' \u2014 ');
+      if(p.autocert==='manca') badges+='<span class="badge-warn">Autocert manca</span><br>';
+      if(p.daRegistrare) badges+='<span class="badge-danger">Da registrare su banco</span>';
+      var bancoStd=String(p.banco||'').trim().toLowerCase();
+      var bancoInfo=[(bancoStd===BANCO_DA||bancoStd===BANCO_OK)?'':p.banco,p.sitBanco].filter(function(v){return v&&v.trim();}).join(' \u2014 ');
       var extraHtml='';
       if(p.ol&&parseInt(p.ol)>0) extraHtml+='<div><span class="box"></span>Olio <b class="'+(parseInt(p.ol)>1?'hi':'')+'">'+p.ol+'</b></div>';
       if(p.ass&&parseInt(p.ass)>0) extraHtml+='<div><span class="box"></span>Assorbenti <b class="'+(parseInt(p.ass)>1?'hi':'')+'">'+p.ass+'</b></div>';
@@ -1798,7 +1904,7 @@ function generaHtmlTurno(turno){
         '<td class="center" style="font-size:9.5px;font-weight:600;color:#555">'+ora+'</td>'+
         '<td><span class="codice">'+p.codice+'</span></td>'+
         '<td><span class="nome">'+p.nome+'</span>'+(badges?'<br>'+badges:'')+'</td>'+
-        '<td style="font-size:8px;color:#555;line-height:1.4">'+(p.daRegistrare?'<span class="badge-warn">Da registrare</span><br>':'')+bancoInfo+'</td>'+
+        '<td style="font-size:8px;color:#555;line-height:1.4">'+(p.daRegistrare?'<span class="badge-danger">Da registrare su banco</span><br>':'<span style="color:#2d6a4f">Registrato su banco</span><br>')+bancoInfo+'</td>'+
         '<td class="center">'+(p.totN||'')+'</td>'+
         '<td class="center">'+(p.ad||'')+'</td>'+
         '<td class="center">'+(p.min||'')+'</td>'+
