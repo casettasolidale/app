@@ -170,8 +170,8 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   attive): copia la riga in "anagrafica_archivio" (creata dall'app se manca: intestazioni di Anagrafica
   + "data archiviazione") con codice ex<codice>_<aaaa-mm-gg>; nel foglio "presenze" i ritiri di quel
   codice prendono il codice ex…; in Anagrafica la riga NON si cancella (sposterebbe le righe sotto per
-  gli altri telefoni) ma si svuotano le colonne C–T: restano A (codice) e B (codice anon), il codice torna
-  libero. Ripetibile senza doppioni. "presenze_archivio" non si tocca. Cerca mostra solo righe con nome.
+  gli altri telefoni) ma si svuotano le colonne B–T (anche il codice anon, che è legato alla persona):
+  resta solo A (codice), che torna libero. Ripetibile senza doppioni. "presenze_archivio" non si tocca. Cerca mostra solo righe con nome.
 
 ## Lavori in corso (compiti concordati)
 

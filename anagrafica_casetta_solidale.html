@@ -1110,7 +1110,7 @@ function apriModifica(idx) {
 // ===== ARCHIVIAZIONE DI UN UTENTE (libera il codice senza perdere lo storico) =====
 // 1) copia la persona in "anagrafica_archivio" con codice ex<codice>_<aaaa-mm-gg> (scheda creata se manca)
 // 2) nel foglio "presenze" i ritiri di quel codice prendono il codice ex…
-// 3) in Anagrafica la riga resta con codice (A) e codice anon (B) ma dati svuotati: il codice torna libero
+// 3) in Anagrafica la riga resta con il solo codice (A), tutto il resto svuotato: il codice torna libero
 // Le righe non vengono mai cancellate (spostare le righe confonderebbe gli altri telefoni aperti).
 // Si può ripetere se si interrompe: non crea doppioni. "presenze_archivio" (vecchio sistema) non si tocca.
 var ARCHIVIO_ANAGRAFICA='anagrafica_archivio';
@@ -1172,9 +1172,9 @@ function archiviaUtente() {
         body:JSON.stringify({valueInputOption:'RAW',data:dati})}).then(okJson);
     });
   }).then(function(){
-    // 3) libera il codice: svuota i dati (colonne C–T), il codice resta
+    // 3) libera il codice: svuota i dati (colonne B–T, anche il codice anon), il codice resta
     return apiFetch(urlSheets('/values:batchClear'),{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({ranges:['Anagrafica!C'+riga.num+':T'+riga.num]})}).then(okJson);
+      body:JSON.stringify({ranges:['Anagrafica!B'+riga.num+':T'+riga.num]})}).then(okJson);
   }).then(function(){
     alert('Fatto: '+nome+' è archiviata come '+ex+' ('+rinominati+' ritiri collegati).\nIl codice '+codice+' è di nuovo libero.');
     closeModal(); caricaDati();
