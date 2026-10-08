@@ -54,8 +54,16 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .badge-warn { background: #fff3cd; color: #856404; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .badge-ok { background: #d8f3dc; color: var(--verde); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .btn-archivia { width: 100%; padding: 10px; background: white; color: var(--testo-muted); border: 1.5px solid var(--bordo); border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; display: none; }
-.banco-riga { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--grigio); font-size: 14px; cursor: pointer; }
-.banco-riga input { width: 22px; height: 22px; accent-color: var(--verde); flex-shrink: 0; }
+.banco-riga { display: flex; align-items: flex-start; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--grigio); font-size: 14px; }
+.banco-riga input { width: 22px; height: 22px; accent-color: var(--verde); flex-shrink: 0; margin-top: 1px; }
+.banco-riga details { flex: 1; min-width: 0; }
+.banco-riga summary { cursor: pointer; list-style: none; padding: 1px 0; }
+.banco-riga summary::-webkit-details-marker { display: none; }
+.banco-riga summary::after { content: ' ▾'; color: var(--testo-muted); font-size: 12px; }
+.banco-riga details[open] summary::after { content: ' ▴'; }
+.banco-dettagli { margin-top: 8px; padding: 10px 12px; background: var(--grigio); border-radius: 8px; font-size: 13px; }
+.banco-dato { padding: 3px 0; display: flex; gap: 8px; }
+.banco-dato span { flex: 0 0 108px; color: var(--testo-muted); font-size: 12px; font-weight: 600; }
 .badge-danger { background: #ffe0e0; color: var(--rosso); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .btn-edit { background: var(--grigio); border: 1px solid var(--bordo); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 16px; flex-shrink: 0; }
 .btn-edit:hover { background: var(--verde-light); }
@@ -743,9 +751,29 @@ function mostraDaRegistrare() {
   var lista=personeDaRegistrare(), el=document.getElementById('banco-lista');
   aggiornaContoBanco();
   if (!lista.length) { el.innerHTML='<p class="empty">Nessuna persona da registrare su banco ✓</p>'; return; }
+  // ogni persona si apre (accordion) per leggere tutti i dati senza cambiare scheda
+  var aperti={}; document.querySelectorAll('#banco-lista details[open]').forEach(function(d){ aperti[d.getAttribute('data-cod')]=true; });
+  var spuntati={}; document.querySelectorAll('.banco-chk:checked').forEach(function(c){ spuntati[c.value]=true; });
   el.innerHTML=lista.map(function(p){
-    return '<label class="banco-riga"><input type="checkbox" class="banco-chk" value="'+p.codice+'"> '+
-      '<span class="tag tag-codice">'+p.codice+'</span> <b>'+p.nome+'</b>'+(p.turno?' <span class="tag tag-turno">'+p.turno+'</span>':'')+'</label>';
+    var dato=function(etichetta,valore){ return valore?'<div class="banco-dato"><span>'+etichetta+'</span>'+valore+'</div>':''; };
+    var nucleo=[p.totN?'totale '+p.totN:'', p.ad?'adulti '+p.ad:'', p.min?'minori '+p.min:''].filter(Boolean).join(', ');
+    return '<div class="banco-riga">'+
+      '<input type="checkbox" class="banco-chk" value="'+p.codice+'"'+(spuntati[p.codice]?' checked':'')+'>'+
+      '<details data-cod="'+p.codice+'"'+(aperti[p.codice]?' open':'')+'>'+
+        '<summary><span class="tag tag-codice">'+p.codice+'</span> <b>'+p.nome+'</b>'+(p.turno?' <span class="tag tag-turno">'+p.turno+'</span>':'')+'</summary>'+
+        '<div class="banco-dettagli">'+
+          dato('Telefono', p.telefono==='no tel'?'':p.telefono)+
+          dato('Indirizzo', p.indirizzo)+
+          dato('Turno', p.turno?(p.turno+(p.orario?' alle '+p.orario:'')):'')+
+          dato('Nucleo', nucleo)+
+          dato('Autocert', p.autocert==='manca'?'⚠️ manca':'✓ presente')+
+          dato('Situazione banco', p.sitBanco)+
+          dato('Esigenze', p.esigenze)+
+          dato('Note', p.note)+
+          '<button class="btn-back" style="margin-top:6px" onclick="apriModifica('+anagrafica.indexOf(p)+')">✏️ Modifica dati</button>'+
+        '</div>'+
+      '</details>'+
+    '</div>';
   }).join('');
 }
 function salvaRegistratiBanco() {
@@ -1261,6 +1289,7 @@ function salva() {
   }).then(function(r){if(!r.ok) return erroreGoogle(r);
     status.innerHTML='<span class="save-ok">✓ Salvato!</span>';
     cerca(document.getElementById('search-input').value);
+    if (document.getElementById('banco-card').style.display!=='none') mostraDaRegistrare();
     setTimeout(closeModal,1200);
   }).catch(function(e){status.innerHTML='<span class="save-err">Non salvato: '+testoErrore(e)+'</span>';})
   .finally(function(){btn.disabled=false;btn.textContent='Salva modifiche';});

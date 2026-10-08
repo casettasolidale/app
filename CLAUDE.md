@@ -176,6 +176,9 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
 - 2026-10 — Cerca: pulsante "👁️ Vedi inattivi (N)" che elenca le persone non attive; nei risultati le
   persone non attive hanno riquadro grigio (.persona-inattiva), etichetta "Non attivo" e codice bianco
   con bordo (per non confondersi con lo sfondo).
+- 2026-10 — "Da registrare su banco": ogni persona è un accordion (<details>) con tutti i dati
+  (telefono, indirizzo, turno, nucleo, autocert, situazione banco, esigenze, note) e "✏️ Modifica dati";
+  la casella di spunta resta fuori dal titolo, così aprire non spunta.
 
 ## Lavori in corso (compiti concordati)
 
