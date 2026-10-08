@@ -36,6 +36,10 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .search-wrap input:focus { outline: none; border-color: var(--verde); }
 .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--testo-muted); }
 .person-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--grigio); }
+.persona-inattiva { background: #ececec; border-radius: 10px; padding: 12px 10px; margin: 6px 0; border-bottom: none; }
+.persona-inattiva .avatar { background: #d6d6d6; color: #555; }
+.persona-inattiva .tag-codice { background: white; border: 1px solid #b5b5b5; color: #444; }
+.tag-inattivo { background: #6c757d; color: white; font-size: 10px; vertical-align: middle; }
 .person-row:last-child { border-bottom: none; }
 .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--verde-light); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--verde); flex-shrink: 0; }
 .person-info { flex: 1; min-width: 0; }
@@ -50,8 +54,16 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .badge-warn { background: #fff3cd; color: #856404; padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .badge-ok { background: #d8f3dc; color: var(--verde); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .btn-archivia { width: 100%; padding: 10px; background: white; color: var(--testo-muted); border: 1.5px solid var(--bordo); border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; margin-top: 10px; display: none; }
-.banco-riga { display: flex; align-items: center; gap: 8px; padding: 9px 4px; border-bottom: 1px solid var(--grigio); font-size: 14px; cursor: pointer; }
-.banco-riga input { width: 22px; height: 22px; accent-color: var(--verde); flex-shrink: 0; }
+.banco-riga { display: flex; align-items: flex-start; gap: 10px; padding: 9px 4px; border-bottom: 1px solid var(--grigio); font-size: 14px; }
+.banco-riga input { width: 22px; height: 22px; accent-color: var(--verde); flex-shrink: 0; margin-top: 1px; }
+.banco-riga details { flex: 1; min-width: 0; }
+.banco-riga summary { cursor: pointer; list-style: none; padding: 1px 0; }
+.banco-riga summary::-webkit-details-marker { display: none; }
+.banco-riga summary::after { content: ' ▾'; color: var(--testo-muted); font-size: 12px; }
+.banco-riga details[open] summary::after { content: ' ▴'; }
+.banco-dettagli { margin-top: 8px; padding: 10px 12px; background: var(--grigio); border-radius: 8px; font-size: 13px; }
+.banco-dato { padding: 3px 0; display: flex; gap: 8px; }
+.banco-dato span { flex: 0 0 108px; color: var(--testo-muted); font-size: 12px; font-weight: 600; }
 .badge-danger { background: #ffe0e0; color: var(--rosso); padding: 1px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; }
 .btn-edit { background: var(--grigio); border: 1px solid var(--bordo); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 16px; flex-shrink: 0; }
 .btn-edit:hover { background: var(--verde-light); }
@@ -175,6 +187,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
         </div>
         <button onclick="apriNuovoUtente()" style="background:var(--verde);color:white;border:none;border-radius:var(--radius);padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Nuovo utente</button>
       </div>
+      <button id="btn-inattivi" class="btn-back" onclick="vediInattivi()" style="margin:-6px 0 1rem">👁️ Vedi inattivi</button>
       <div class="card" id="search-card" style="display:none">
         <div id="search-results"></div>
       </div>
@@ -659,6 +672,7 @@ function caricaDati() {
     costruisciLingue();
     aggiornaTurniButtons();
     mostraTurni();
+    cerca(document.getElementById('search-input').value);
     ripristinaVista();
   }).catch(function(e){alert('Errore nel caricare i dati: '+testoErrore(e));});
 }
@@ -737,9 +751,29 @@ function mostraDaRegistrare() {
   var lista=personeDaRegistrare(), el=document.getElementById('banco-lista');
   aggiornaContoBanco();
   if (!lista.length) { el.innerHTML='<p class="empty">Nessuna persona da registrare su banco ✓</p>'; return; }
+  // ogni persona si apre (accordion) per leggere tutti i dati senza cambiare scheda
+  var aperti={}; document.querySelectorAll('#banco-lista details[open]').forEach(function(d){ aperti[d.getAttribute('data-cod')]=true; });
+  var spuntati={}; document.querySelectorAll('.banco-chk:checked').forEach(function(c){ spuntati[c.value]=true; });
   el.innerHTML=lista.map(function(p){
-    return '<label class="banco-riga"><input type="checkbox" class="banco-chk" value="'+p.codice+'"> '+
-      '<span class="tag tag-codice">'+p.codice+'</span> <b>'+p.nome+'</b>'+(p.turno?' <span class="tag tag-turno">'+p.turno+'</span>':'')+'</label>';
+    var dato=function(etichetta,valore){ return valore?'<div class="banco-dato"><span>'+etichetta+'</span>'+valore+'</div>':''; };
+    var nucleo=[p.totN?'totale '+p.totN:'', p.ad?'adulti '+p.ad:'', p.min?'minori '+p.min:''].filter(Boolean).join(', ');
+    return '<div class="banco-riga">'+
+      '<input type="checkbox" class="banco-chk" value="'+p.codice+'"'+(spuntati[p.codice]?' checked':'')+'>'+
+      '<details data-cod="'+p.codice+'"'+(aperti[p.codice]?' open':'')+'>'+
+        '<summary><span class="tag tag-codice">'+p.codice+'</span> <b>'+p.nome+'</b>'+(p.turno?' <span class="tag tag-turno">'+p.turno+'</span>':'')+'</summary>'+
+        '<div class="banco-dettagli">'+
+          dato('Telefono', p.telefono==='no tel'?'':p.telefono)+
+          dato('Indirizzo', p.indirizzo)+
+          dato('Turno', p.turno?(p.turno+(p.orario?' alle '+p.orario:'')):'')+
+          dato('Nucleo', nucleo)+
+          dato('Autocert', p.autocert==='manca'?'⚠️ manca':'✓ presente')+
+          dato('Situazione banco', p.sitBanco)+
+          dato('Esigenze', p.esigenze)+
+          dato('Note', p.note)+
+          '<button class="btn-back" style="margin-top:6px" onclick="apriModifica('+anagrafica.indexOf(p)+')">✏️ Modifica dati</button>'+
+        '</div>'+
+      '</details>'+
+    '</div>';
   }).join('');
 }
 function salvaRegistratiBanco() {
@@ -920,33 +954,54 @@ function buildPersonExtras(p) {
   return {badges:badges,extras:extras};
 }
 
+// Riga di una persona nei risultati di Cerca (riquadro grigio se non attiva)
+function htmlPersonaCerca(p) {
+  var idx=anagrafica.indexOf(p), ex=buildPersonExtras(p), inattiva=!isAttivo(p);
+  return '<div class="person-row'+(inattiva?' persona-inattiva':'')+'">'+
+    '<div class="avatar">'+initials(p.nome)+'</div>'+
+    '<div class="person-info">'+
+      '<div class="person-name">'+p.nome+(inattiva?' <span class="tag tag-inattivo">Non attivo</span>':'')+'</div>'+
+      '<div class="person-meta">'+
+        '<span class="tag tag-codice">'+p.codice+'</span>'+tipoTag(p.noWa,p.telefono)+
+        (p.turno?'<span class="tag tag-turno">'+p.turno+'</span>':'')+
+        (p.orario?'<span>'+p.orario+'</span>':'')+
+        '<span>'+(p.telefono==='no tel'?'📵 no tel':'📞 '+p.telefono)+'</span>'+
+      '</div>'+
+      (p.indirizzo?'<div style="font-size:12px;color:#888;margin-top:3px">📍 '+p.indirizzo+'</div>':'')+
+      (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:3px">⚠️ '+p.esigenze+'</div>':'')+
+      (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'')+
+      ((ex.badges||ex.extras)?'<div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">'+ex.badges+ex.extras+'</div>':'')+
+    '</div>'+
+    '<button class="btn-edit" onclick="apriModifica('+idx+')">✏️</button>'+
+  '</div>';
+}
+
+var mostraInattivi=false;
+function vediInattivi() {
+  mostraInattivi=!mostraInattivi;
+  document.getElementById('search-input').value='';
+  cerca('');
+}
+
 function cerca(q) {
   var card=document.getElementById('search-card'), el=document.getElementById('search-results');
+  var btn=document.getElementById('btn-inattivi');
   q=q.trim().toLowerCase();
+  if(q.length) mostraInattivi=false;
+  var inattivi=anagrafica.filter(function(p){ return p.nome&&!isAttivo(p); });
+  btn.textContent=mostraInattivi?'✕ Chiudi elenco inattivi':'👁️ Vedi inattivi ('+inattivi.length+')';
+  if(!q.length && mostraInattivi){
+    card.style.display='block';
+    inattivi.sort(function(a,b){ return a.codice<b.codice?-1:1; });
+    el.innerHTML='<div class="card-title" style="margin-bottom:4px">Persone non attive ('+inattivi.length+')</div>'+
+      (inattivi.length?inattivi.map(htmlPersonaCerca).join(''):'<p class="empty">Nessuna persona non attiva</p>');
+    return;
+  }
   if(q.length<1){card.style.display='none';return;}
   var found=anagrafica.filter(function(p){return p.nome&&(p.codice.includes(q)||p.nome.toLowerCase().includes(q));}).slice(0,12);
   card.style.display='block';
   if(!found.length){el.innerHTML='<p class="empty">Nessun risultato</p>';return;}
-  el.innerHTML=found.map(function(p){
-    var idx=anagrafica.indexOf(p), ex=buildPersonExtras(p);
-    return '<div class="person-row">'+
-      '<div class="avatar">'+initials(p.nome)+'</div>'+
-      '<div class="person-info">'+
-        '<div class="person-name">'+p.nome+'</div>'+
-        '<div class="person-meta">'+
-          '<span class="tag tag-codice">'+p.codice+'</span>'+tipoTag(p.noWa,p.telefono)+
-          (p.turno?'<span class="tag tag-turno">'+p.turno+'</span>':'')+
-          (p.orario?'<span>'+p.orario+'</span>':'')+
-          '<span>'+(p.telefono==='no tel'?'📵 no tel':'📞 '+p.telefono)+'</span>'+
-        '</div>'+
-        (p.indirizzo?'<div style="font-size:12px;color:#888;margin-top:3px">📍 '+p.indirizzo+'</div>':'')+
-        (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:3px">⚠️ '+p.esigenze+'</div>':'')+
-        (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'')+
-        ((ex.badges||ex.extras)?'<div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">'+ex.badges+ex.extras+'</div>':'')+
-      '</div>'+
-      '<button class="btn-edit" onclick="apriModifica('+idx+')">✏️</button>'+
-    '</div>';
-  }).join('');
+  el.innerHTML=found.map(htmlPersonaCerca).join('');
 }
 
 // ===== ORARI (usa FASCE_ORARIE in cima allo script) =====
@@ -1234,6 +1289,7 @@ function salva() {
   }).then(function(r){if(!r.ok) return erroreGoogle(r);
     status.innerHTML='<span class="save-ok">✓ Salvato!</span>';
     cerca(document.getElementById('search-input').value);
+    if (document.getElementById('banco-card').style.display!=='none') mostraDaRegistrare();
     setTimeout(closeModal,1200);
   }).catch(function(e){status.innerHTML='<span class="save-err">Non salvato: '+testoErrore(e)+'</span>';})
   .finally(function(){btn.disabled=false;btn.textContent='Salva modifiche';});
