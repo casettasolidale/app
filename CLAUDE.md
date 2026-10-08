@@ -173,6 +173,10 @@ La responsabile non è una tecnica: **rispondi sempre in italiano, in modo sempl
   gli altri telefoni) ma si svuotano le colonne B–T (anche il codice anon, che è legato alla persona):
   resta solo A (codice), che torna libero. Ripetibile senza doppioni. "presenze_archivio" non si tocca. Cerca mostra solo righe con nome.
 
+- 2026-10 — Cerca: pulsante "👁️ Vedi inattivi (N)" che elenca le persone non attive; nei risultati le
+  persone non attive hanno riquadro grigio (.persona-inattiva), etichetta "Non attivo" e codice bianco
+  con bordo (per non confondersi con lo sfondo).
+
 ## Lavori in corso (compiti concordati)
 
 1. CLAUDE.md — fatto.

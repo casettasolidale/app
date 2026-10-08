@@ -36,6 +36,10 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
 .search-wrap input:focus { outline: none; border-color: var(--verde); }
 .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--testo-muted); }
 .person-row { display: flex; align-items: flex-start; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--grigio); }
+.persona-inattiva { background: #ececec; border-radius: 10px; padding: 12px 10px; margin: 6px 0; border-bottom: none; }
+.persona-inattiva .avatar { background: #d6d6d6; color: #555; }
+.persona-inattiva .tag-codice { background: white; border: 1px solid #b5b5b5; color: #444; }
+.tag-inattivo { background: #6c757d; color: white; font-size: 10px; vertical-align: middle; }
 .person-row:last-child { border-bottom: none; }
 .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--verde-light); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: var(--verde); flex-shrink: 0; }
 .person-info { flex: 1; min-width: 0; }
@@ -175,6 +179,7 @@ header { background: var(--verde); color: white; padding: 0 1.5rem; display: fle
         </div>
         <button onclick="apriNuovoUtente()" style="background:var(--verde);color:white;border:none;border-radius:var(--radius);padding:10px 16px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0">+ Nuovo utente</button>
       </div>
+      <button id="btn-inattivi" class="btn-back" onclick="vediInattivi()" style="margin:-6px 0 1rem">👁️ Vedi inattivi</button>
       <div class="card" id="search-card" style="display:none">
         <div id="search-results"></div>
       </div>
@@ -659,6 +664,7 @@ function caricaDati() {
     costruisciLingue();
     aggiornaTurniButtons();
     mostraTurni();
+    cerca(document.getElementById('search-input').value);
     ripristinaVista();
   }).catch(function(e){alert('Errore nel caricare i dati: '+testoErrore(e));});
 }
@@ -920,33 +926,54 @@ function buildPersonExtras(p) {
   return {badges:badges,extras:extras};
 }
 
+// Riga di una persona nei risultati di Cerca (riquadro grigio se non attiva)
+function htmlPersonaCerca(p) {
+  var idx=anagrafica.indexOf(p), ex=buildPersonExtras(p), inattiva=!isAttivo(p);
+  return '<div class="person-row'+(inattiva?' persona-inattiva':'')+'">'+
+    '<div class="avatar">'+initials(p.nome)+'</div>'+
+    '<div class="person-info">'+
+      '<div class="person-name">'+p.nome+(inattiva?' <span class="tag tag-inattivo">Non attivo</span>':'')+'</div>'+
+      '<div class="person-meta">'+
+        '<span class="tag tag-codice">'+p.codice+'</span>'+tipoTag(p.noWa,p.telefono)+
+        (p.turno?'<span class="tag tag-turno">'+p.turno+'</span>':'')+
+        (p.orario?'<span>'+p.orario+'</span>':'')+
+        '<span>'+(p.telefono==='no tel'?'📵 no tel':'📞 '+p.telefono)+'</span>'+
+      '</div>'+
+      (p.indirizzo?'<div style="font-size:12px;color:#888;margin-top:3px">📍 '+p.indirizzo+'</div>':'')+
+      (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:3px">⚠️ '+p.esigenze+'</div>':'')+
+      (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'')+
+      ((ex.badges||ex.extras)?'<div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">'+ex.badges+ex.extras+'</div>':'')+
+    '</div>'+
+    '<button class="btn-edit" onclick="apriModifica('+idx+')">✏️</button>'+
+  '</div>';
+}
+
+var mostraInattivi=false;
+function vediInattivi() {
+  mostraInattivi=!mostraInattivi;
+  document.getElementById('search-input').value='';
+  cerca('');
+}
+
 function cerca(q) {
   var card=document.getElementById('search-card'), el=document.getElementById('search-results');
+  var btn=document.getElementById('btn-inattivi');
   q=q.trim().toLowerCase();
+  if(q.length) mostraInattivi=false;
+  var inattivi=anagrafica.filter(function(p){ return p.nome&&!isAttivo(p); });
+  btn.textContent=mostraInattivi?'✕ Chiudi elenco inattivi':'👁️ Vedi inattivi ('+inattivi.length+')';
+  if(!q.length && mostraInattivi){
+    card.style.display='block';
+    inattivi.sort(function(a,b){ return a.codice<b.codice?-1:1; });
+    el.innerHTML='<div class="card-title" style="margin-bottom:4px">Persone non attive ('+inattivi.length+')</div>'+
+      (inattivi.length?inattivi.map(htmlPersonaCerca).join(''):'<p class="empty">Nessuna persona non attiva</p>');
+    return;
+  }
   if(q.length<1){card.style.display='none';return;}
   var found=anagrafica.filter(function(p){return p.nome&&(p.codice.includes(q)||p.nome.toLowerCase().includes(q));}).slice(0,12);
   card.style.display='block';
   if(!found.length){el.innerHTML='<p class="empty">Nessun risultato</p>';return;}
-  el.innerHTML=found.map(function(p){
-    var idx=anagrafica.indexOf(p), ex=buildPersonExtras(p);
-    return '<div class="person-row">'+
-      '<div class="avatar">'+initials(p.nome)+'</div>'+
-      '<div class="person-info">'+
-        '<div class="person-name">'+p.nome+'</div>'+
-        '<div class="person-meta">'+
-          '<span class="tag tag-codice">'+p.codice+'</span>'+tipoTag(p.noWa,p.telefono)+
-          (p.turno?'<span class="tag tag-turno">'+p.turno+'</span>':'')+
-          (p.orario?'<span>'+p.orario+'</span>':'')+
-          '<span>'+(p.telefono==='no tel'?'📵 no tel':'📞 '+p.telefono)+'</span>'+
-        '</div>'+
-        (p.indirizzo?'<div style="font-size:12px;color:#888;margin-top:3px">📍 '+p.indirizzo+'</div>':'')+
-        (p.esigenze?'<div style="font-size:12px;color:#888;margin-top:3px">⚠️ '+p.esigenze+'</div>':'')+
-        (p.note?'<div style="font-size:12px;color:#aaa;margin-top:2px">📝 '+p.note+'</div>':'')+
-        ((ex.badges||ex.extras)?'<div style="font-size:11px;margin-top:3px;display:flex;gap:6px;flex-wrap:wrap">'+ex.badges+ex.extras+'</div>':'')+
-      '</div>'+
-      '<button class="btn-edit" onclick="apriModifica('+idx+')">✏️</button>'+
-    '</div>';
-  }).join('');
+  el.innerHTML=found.map(htmlPersonaCerca).join('');
 }
 
 // ===== ORARI (usa FASCE_ORARIE in cima allo script) =====
